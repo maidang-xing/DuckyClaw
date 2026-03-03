@@ -33,3 +33,4 @@ target_include_directories(${EXAMPLE_LIB}
     )
 
 add_subdirectory(${APP_PATH}/TuyaOpen/apps/tuya.ai/ai_components)
+add_subdirectory(${APP_PATH}/IM ${CMAKE_BINARY_DIR}/IM)

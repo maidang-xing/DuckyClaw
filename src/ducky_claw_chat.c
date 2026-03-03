@@ -11,6 +11,9 @@
 #include "ai_chat_main.h"
 #include "ducky_claw_chat.h"
 
+#include "app_im.h"
+#include "tal_log.h"
+
 #if defined(ENABLE_WIFI) && (ENABLE_WIFI == 1)
 #include "tkl_wifi.h"
 #endif
@@ -152,9 +155,56 @@ void __ai_picture_output_cb(uint8_t *data, uint32_t len, bool is_eof)
 #endif
 
 
+#define STREAM_DATA_MAX_LEN (16*1024)
+
 static void __ai_chat_handle_event(AI_NOTIFY_EVENT_T *event)
 {
+    static char *stream_data = NULL;
+    static uint32_t data_write_offset = 0;
     (void)event;
+
+    if (NULL == event) {
+        return;
+    }
+
+
+    switch (event->type) {
+    case AI_USER_EVT_TEXT_STREAM_START: {
+        if (stream_data == NULL) {
+            stream_data = tal_psram_malloc(STREAM_DATA_MAX_LEN);
+            if (stream_data == NULL) {
+                PR_ERR("Failed to allocate stream data memory");
+                return;
+            }
+        }
+        memset(stream_data, 0, STREAM_DATA_MAX_LEN);
+        data_write_offset = 0;
+
+        AI_NOTIFY_TEXT_T *text = (AI_NOTIFY_TEXT_T *)event->data;
+        if (text && text->datalen > 0 && text->data && data_write_offset + text->datalen <= STREAM_DATA_MAX_LEN) {
+            memcpy(stream_data + data_write_offset, text->data, text->datalen);
+            data_write_offset += text->datalen;
+        }
+    } break;
+    case AI_USER_EVT_TEXT_STREAM_DATA: {
+        AI_NOTIFY_TEXT_T *text = (AI_NOTIFY_TEXT_T *)event->data;
+
+        if (data_write_offset + text->datalen >= STREAM_DATA_MAX_LEN) {
+            app_im_bot_send_message((char *)stream_data);
+            memset(stream_data, 0, STREAM_DATA_MAX_LEN);
+            data_write_offset = 0;
+        }
+
+        memcpy(stream_data + data_write_offset, text->data, text->datalen);
+        data_write_offset += text->datalen;
+    } break;
+    case AI_USER_EVT_TEXT_STREAM_STOP: {
+        app_im_bot_send_message((char *)stream_data);
+        memset(stream_data, 0, STREAM_DATA_MAX_LEN);
+        data_write_offset = 0;
+    } break;
+    default: break;
+    }
 }
 
 OPERATE_RET ducky_claw_chat_init(void)

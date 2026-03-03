@@ -1,0 +1,165 @@
+/**
+ * @file app_im.c
+ * @brief app_im module is used to 
+ * @version 0.1
+ * @copyright Copyright (c) 2021-2026 Tuya Inc. All Rights Reserved.
+ */
+
+#include "app_im.h"
+
+#include "tal_api.h"
+
+#include "im_api.h"
+#include "ai_agent.h"
+#include "ai_chat_main.h"
+#include "tal_system.h"
+#include <stdatomic.h>
+
+/***********************************************************
+************************macro define************************
+***********************************************************/
+#define INBOUND_POLL_MS  100
+
+/***********************************************************
+***********************typedef define***********************
+***********************************************************/
+
+
+/***********************************************************
+********************function declaration********************
+***********************************************************/
+
+
+/***********************************************************
+***********************variable define**********************
+***********************************************************/
+static THREAD_HANDLE s_outbound_thd = NULL;
+static THREAD_HANDLE s_inbound_thd  = NULL;
+
+static char *s_channel = NULL;
+static char s_chat_id[96] = {0};
+
+/***********************************************************
+***********************function define**********************
+***********************************************************/
+
+static void inbound_loop_task(void *arg)
+{
+    (void)arg;
+    PR_INFO("inbound loop started");
+    while (1) {
+        im_msg_t in = {0};
+        if (message_bus_pop_inbound(&in, INBOUND_POLL_MS) != OPRT_OK) continue;
+        if (!in.content) continue;
+        strncpy(s_chat_id, in.chat_id, sizeof(s_chat_id) - 1);
+
+        // Step 1: upload to tuya agent
+        ai_agent_send_text(in.content);
+
+        // Step 2: display on screen
+        ai_ui_disp_msg(AI_UI_DISP_USER_MSG, (uint8_t *)in.content, strlen(in.content));
+
+        if (in.content) {
+            PR_INFO("inbound msg: %s", in.content);
+            tal_free(in.content);
+        }
+    }
+}
+
+static void outbound_dispatch_task(void *arg)
+{
+    (void)arg;
+    PR_INFO("outbound dispatcher started");
+    while (1) {
+        im_msg_t msg = {0};
+        if (message_bus_pop_outbound(&msg, 0xffffffff) != OPRT_OK) continue;
+        if (!msg.content) continue;
+
+        if (strcmp(msg.channel, IM_CHAN_TELEGRAM) == 0) {
+            (void)telegram_send_message(msg.chat_id, msg.content ? msg.content : "");
+        } else if (strcmp(msg.channel, IM_CHAN_DISCORD) == 0) {
+            (void)discord_send_message(msg.chat_id, msg.content ? msg.content : "");
+        } else if (strcmp(msg.channel, IM_CHAN_FEISHU) == 0) {
+            (void)feishu_send_message(msg.chat_id, msg.content ? msg.content : "");
+        } else if (strcmp(msg.channel, "system") == 0) {
+            PR_INFO("system msg: %s", msg.content ? msg.content : "");
+        }
+        tal_free(msg.content);
+    }
+}
+
+static OPERATE_RET start_inbound_loop(void)
+{
+    if (s_inbound_thd) return OPRT_OK;
+    THREAD_CFG_T cfg = {0};
+    cfg.stackDepth = 8 * 1024;
+    cfg.priority   = THREAD_PRIO_1;
+    cfg.thrdname   = "inbound_loop";
+#if defined(ENABLE_EXT_RAM) && (ENABLE_EXT_RAM == 1)
+    cfg.psram_mode = 1;
+#endif
+    return tal_thread_create_and_start(&s_inbound_thd, NULL, NULL, inbound_loop_task, NULL, &cfg);
+}
+
+static OPERATE_RET start_outbound_dispatcher(void)
+{
+    if (s_outbound_thd) return OPRT_OK;
+    THREAD_CFG_T cfg = {0};
+    cfg.stackDepth = IM_OUTBOUND_STACK;
+    cfg.priority   = THREAD_PRIO_1;
+    cfg.thrdname   = "outbound_loop";
+#if defined(ENABLE_EXT_RAM) && (ENABLE_EXT_RAM == 1)
+    cfg.psram_mode = 1;
+#endif
+    return tal_thread_create_and_start(&s_outbound_thd, NULL, NULL, outbound_dispatch_task, NULL, &cfg);
+}
+
+static OPERATE_RET app_im_init_evt_cb(void *data)
+{
+    OPERATE_RET rt = OPRT_OK;
+
+    PR_INFO("app im network connected, init im...");
+
+    message_bus_init();
+    // http_proxy_init();
+    // telegram_bot_init();
+    // discord_bot_init();
+    feishu_bot_init();
+
+    feishu_bot_start();
+    s_channel = IM_CHAN_FEISHU;
+
+    start_inbound_loop();
+    start_outbound_dispatcher();
+
+    return rt;
+}
+
+OPERATE_RET app_im_init(void)
+{
+    PR_INFO("app im wait network...");
+    return tal_event_subscribe(EVENT_MQTT_CONNECTED, "app_im_init", app_im_init_evt_cb, SUBSCRIBE_TYPE_NORMAL);
+}
+
+OPERATE_RET app_im_bot_send_message(const char *message)
+{
+    OPERATE_RET rt = OPRT_OK;
+
+    PR_DEBUG("app im bot send message: %s", message);
+
+    im_msg_t out = {0};
+    strncpy(out.channel, s_channel, sizeof(out.channel) - 1);
+    strncpy(out.chat_id, s_chat_id, sizeof(out.chat_id) - 1);
+    PR_DEBUG("app im bot send message: channel=%s, chat_id=%s", out.channel, out.chat_id);
+
+    out.content = tal_psram_malloc(strlen(message) + 1);
+    if (!out.content) {
+        return OPRT_MALLOC_FAILED;
+    }
+    memset(out.content, 0, strlen(message) + 1);
+    strncpy(out.content, message, strlen(message));
+
+    message_bus_push_outbound(&out);
+
+    return rt;
+}
