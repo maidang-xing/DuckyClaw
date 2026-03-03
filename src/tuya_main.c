@@ -1,56 +1,68 @@
 /**
  * @file tuya_main.c
- * @brief tuya_main module is used to manage the Tuya device application.
+ * @brief Implements main audio functionality for IoT device
  *
- * This file provides the implementation of the tuya_main module,
- * which is responsible for managing the Tuya device application.
+ * This source file provides the implementation of the main audio functionalities
+ * required for an IoT device. It includes functionality for audio processing,
+ * device initialization, event handling, and network communication. The
+ * implementation supports audio volume control, data point processing, and
+ * interaction with the Tuya IoT platform. This file is essential for developers
+ * working on IoT applications that require audio capabilities and integration
+ * with the Tuya IoT ecosystem.
  *
  * @copyright Copyright (c) 2021-2025 Tuya Inc. All Rights Reserved.
  *
- * 2025-07-11   yangjie     Add cellular network support.
  */
 
+#include "tuya_cloud_types.h"
+
+#include <assert.h>
 #include "cJSON.h"
-#include "netmgr.h"
 #include "tal_api.h"
-#include "tkl_output.h"
 #include "tuya_config.h"
 #include "tuya_iot.h"
 #include "tuya_iot_dp.h"
+#include "netmgr.h"
+#include "tkl_output.h"
 #include "tal_cli.h"
 #include "tuya_authorize.h"
-#include <assert.h>
 #if defined(ENABLE_WIFI) && (ENABLE_WIFI == 1)
 #include "netconn_wifi.h"
+#else
+// Stub WiFi functions for non-WiFi platforms (e.g., Ubuntu with wired)
+#include "tkl_wifi_stub.h"
 #endif
 #if defined(ENABLE_WIRED) && (ENABLE_WIRED == 1)
 #include "netconn_wired.h"
-#endif
-#if defined(ENABLE_CELLULAR) && (ENABLE_CELLULAR == 1)
-#include "netconn_cellular.h"
 #endif
 #if defined(ENABLE_LIBLWIP) && (ENABLE_LIBLWIP == 1)
 #include "lwip_init.h"
 #endif
 
+#include "board_com_api.h"
+
+#include "ducky_claw_chat.h"
 #include "reset_netcfg.h"
+
+
 
 #if defined(ENABLE_QRCODE) && (ENABLE_QRCODE == 1)
 #include "qrencode_print.h"
 #endif
 
+/* Tuya device handle */
+tuya_iot_client_t ai_client;
+
+/* Tuya license information (uuid authkey) */
+tuya_iot_license_t license;
+
 #ifndef PROJECT_VERSION
 #define PROJECT_VERSION "1.0.0"
 #endif
 
-/* for cli command register */
-extern void tuya_app_cli_init(void);
+#define DPID_VOLUME 3
 
-/* Tuya device handle */
-tuya_iot_client_t client;
-
-/* Tuya license information (uuid authkey) */
-tuya_iot_license_t license;
+static uint8_t _need_reset = 0;
 
 /**
  * @brief user defined log output api, in this demo, it will use uart0 as log-tx
@@ -60,12 +72,11 @@ tuya_iot_license_t license;
  */
 void user_log_output_cb(const char *str)
 {
-    tkl_log_output(str);
+    tal_uart_write(TUYA_UART_NUM_0, (const uint8_t *)str, strlen(str));
 }
 
 /**
- * @brief user defined upgrade notify callback, it will notify device a OTA
- * request received
+ * @brief user defined upgrade notify callback, it will notify device a OTA request received
  *
  * @param client device info
  * @param upgrade the upgrade request info
@@ -83,6 +94,49 @@ void user_upgrade_notify_on(tuya_iot_client_t *client, cJSON *upgrade)
     PR_INFO("HTTPS URL: %s", cJSON_GetObjectItem(upgrade, "httpsUrl")->valuestring);
 }
 
+OPERATE_RET audio_dp_obj_proc(dp_obj_recv_t *dpobj)
+{
+    uint32_t index = 0;
+    for (index = 0; index < dpobj->dpscnt; index++) {
+        dp_obj_t *dp = dpobj->dps + index;
+        PR_DEBUG("idx:%d dpid:%d type:%d ts:%u", index, dp->id, dp->type, dp->time_stamp);
+
+        switch (dp->id) {
+        case DPID_VOLUME: {
+            uint8_t volume = dp->value.dp_value;
+            PR_DEBUG("volume:%d", volume);
+            ai_chat_set_volume(volume);
+#if defined(ENABLE_CHAT_DISPLAY) && (ENABLE_CHAT_DISPLAY == 1)
+            char volume_str[20] = {0};
+            snprintf(volume_str, sizeof(volume_str), "%s%d", VOLUME, volume);
+            ai_ui_disp_msg(AI_UI_DISP_NOTIFICATION, (uint8_t *)volume_str, strlen(volume_str));
+#endif
+            break;
+        }
+        default:
+            break;
+        }
+    }
+
+    return OPRT_OK;
+}
+
+OPERATE_RET ai_audio_volume_upload(void)
+{
+    tuya_iot_client_t *client = tuya_iot_client_get();
+    dp_obj_t dp_obj = {0};
+
+    uint8_t volume = ai_chat_get_volume();
+
+    dp_obj.id = DPID_VOLUME;
+    dp_obj.type = PROP_VALUE;
+    dp_obj.value.dp_value = volume;
+
+    PR_DEBUG("DP upload volume:%d", volume);
+
+    return tuya_iot_dp_obj_report(client, client->activate.devid, &dp_obj, 1, 0);
+}
+
 /**
  * @brief user defined event handler
  *
@@ -94,9 +148,19 @@ void user_event_handler_on(tuya_iot_client_t *client, tuya_event_msg_t *event)
 {
     PR_DEBUG("Tuya Event ID:%d(%s)", event->id, EVENT_ID2STR(event->id));
     PR_INFO("Device Free heap %d", tal_system_get_free_heap_size());
+
     switch (event->id) {
     case TUYA_EVENT_BIND_START:
         PR_INFO("Device Bind Start!");
+        if (_need_reset == 1) {
+            PR_INFO("Device Reset!");
+            tal_system_reset();
+        }
+
+        #if defined(ENABLE_COMP_AI_AUDIO) && (ENABLE_COMP_AI_AUDIO == 1)
+        ai_audio_player_alert(AI_AUDIO_ALERT_NETWORK_CFG);
+        #endif
+        
         break;
 
     /* Print the QRCode for Tuya APP bind */
@@ -108,9 +172,30 @@ void user_event_handler_on(tuya_iot_client_t *client, tuya_event_msg_t *event)
 #endif
     } break;
 
+    case TUYA_EVENT_BIND_TOKEN_ON:
+        break;
+
     /* MQTT with tuya cloud is connected, device online */
     case TUYA_EVENT_MQTT_CONNECTED:
         PR_INFO("Device MQTT Connected!");
+        tal_event_publish(EVENT_MQTT_CONNECTED, NULL);
+
+        static uint8_t first = 1;
+        if (first) {
+            first = 0;
+
+#if defined(ENABLE_CHAT_DISPLAY) && (ENABLE_CHAT_DISPLAY == 1)
+            UI_WIFI_STATUS_E wifi_status = UI_WIFI_STATUS_GOOD;
+            ai_ui_disp_msg(AI_UI_DISP_NETWORK, (uint8_t *)&wifi_status, sizeof(UI_WIFI_STATUS_E));
+#endif
+            ai_audio_volume_upload();
+        }
+        break;
+
+    /* MQTT with tuya cloud is disconnected, device offline */
+    case TUYA_EVENT_MQTT_DISCONNECT:
+        PR_INFO("Device MQTT DisConnected!");
+        tal_event_publish(EVENT_MQTT_DISCONNECTED, NULL);
         break;
 
     /* RECV upgrade request */
@@ -122,9 +207,13 @@ void user_event_handler_on(tuya_iot_client_t *client, tuya_event_msg_t *event)
     case TUYA_EVENT_TIMESTAMP_SYNC:
         PR_INFO("Sync timestamp:%d", event->value.asInteger);
         tal_time_set_posix(event->value.asInteger, 1);
+        tal_event_publish("app.time.sync", NULL);
         break;
+
     case TUYA_EVENT_RESET:
         PR_INFO("Device Reset:%d", event->value.asInteger);
+
+        _need_reset = 1;
         break;
 
     /* RECV OBJ DP */
@@ -135,37 +224,7 @@ void user_event_handler_on(tuya_iot_client_t *client, tuya_event_msg_t *event)
             PR_DEBUG("devid.%s", dpobj->devid);
         }
 
-        uint32_t index = 0;
-        for (index = 0; index < dpobj->dpscnt; index++) {
-            dp_obj_t *dp = dpobj->dps + index;
-            PR_DEBUG("idx:%d dpid:%d type:%d ts:%u", index, dp->id, dp->type, dp->time_stamp);
-            switch (dp->type) {
-            case PROP_BOOL: {
-                PR_DEBUG("bool value:%d", dp->value.dp_bool);
-                break;
-            }
-            case PROP_VALUE: {
-                PR_DEBUG("int value:%d", dp->value.dp_value);
-                break;
-            }
-            case PROP_STR: {
-                PR_DEBUG("str value:%s", dp->value.dp_str);
-                break;
-            }
-            case PROP_ENUM: {
-                PR_DEBUG("enum value:%u", dp->value.dp_enum);
-                break;
-            }
-            case PROP_BITMAP: {
-                PR_DEBUG("bits value:0x%X", dp->value.dp_bitmap);
-                break;
-            }
-            default: {
-                PR_ERR("idx:%d dpid:%d type:%d ts:%u is invalid", index, dp->id, dp->type, dp->time_stamp);
-                break;
-            }
-            } // end of switch
-        }
+        audio_dp_obj_proc(dpobj);
 
         tuya_iot_dp_obj_report(client, dpobj->devid, dpobj->dps, dpobj->dpscnt, 0);
 
@@ -190,16 +249,14 @@ void user_event_handler_on(tuya_iot_client_t *client, tuya_event_msg_t *event)
 
     } break;
 
-        /* TBD.. add other event if necessary */
-
     default:
         break;
     }
 }
 
 /**
- * @brief user defined network check callback, it will check the network every
- * 1sec, in this demo it alwasy return ture due to it's a wired demo
+ * @brief user defined network check callback, it will check the network every 1sec,
+ *        in this demo it alwasy return ture due to it's a wired demo
  *
  * @return true
  * @return false
@@ -213,10 +270,15 @@ bool user_network_check(void)
 
 void user_main(void)
 {
-    int rt = OPRT_OK;
+    int ret = OPRT_OK;
 
     //! open iot development kit runtim init
+#if defined(ENABLE_EXT_RAM) && (ENABLE_EXT_RAM == 1)
+    cJSON_InitHooks(&(cJSON_Hooks){.malloc_fn = tal_psram_malloc, .free_fn = tal_psram_free});
+#else 
     cJSON_InitHooks(&(cJSON_Hooks){.malloc_fn = tal_malloc, .free_fn = tal_free});
+#endif
+
     tal_log_init(TAL_LOG_LEVEL_DEBUG, 1024, (TAL_LOG_OUTPUT_CB)tkl_log_output);
 
     PR_NOTICE("Application information:");
@@ -235,12 +297,9 @@ void user_main(void)
     });
     tal_sw_timer_init();
     tal_workq_init();
-
-#if !defined(PLATFORM_UBUNTU) || (PLATFORM_UBUNTU == 0)
+    tal_time_service_init();
     tal_cli_init();
     tuya_authorize_init();
-    tuya_app_cli_init();
-#endif
 
     reset_netconfig_start();
 
@@ -250,17 +309,18 @@ void user_main(void)
         PR_WARN("Replace the TUYA_OPENSDK_UUID and TUYA_OPENSDK_AUTHKEY contents, otherwise the demo cannot work.\n \
                 Visit https://platform.tuya.com/purchase/index?type=6 to get the open-sdk uuid and authkey.");
     }
-    // PR_DEBUG("uuid %s, authkey %s", license.uuid, license.authkey);
+
     /* Initialize Tuya device configuration */
-    rt = tuya_iot_init(&client, &(const tuya_iot_config_t){
-                                    .software_ver = PROJECT_VERSION,
-                                    .productkey = TUYA_PRODUCT_ID,
-                                    .uuid = license.uuid,
-                                    .authkey = license.authkey,
-                                    .event_handler = user_event_handler_on,
-                                    .network_check = user_network_check,
-                                });
-    assert(rt == OPRT_OK);
+    ret = tuya_iot_init(&ai_client, &(const tuya_iot_config_t){
+                                        .software_ver = PROJECT_VERSION,
+                                        .productkey = TUYA_PRODUCT_ID,
+                                        .uuid = license.uuid,
+                                        .authkey = license.authkey,
+                                        // .firmware_key      = TUYA_DEVICE_FIRMWAREKEY,
+                                        .event_handler = user_event_handler_on,
+                                        .network_check = user_network_check,
+                                    });
+    assert(ret == OPRT_OK);
 
 #if defined(ENABLE_LIBLWIP) && (ENABLE_LIBLWIP == 1)
     TUYA_LwIP_Init();
@@ -274,24 +334,33 @@ void user_main(void)
 #if defined(ENABLE_WIRED) && (ENABLE_WIRED == 1)
     type |= NETCONN_WIRED;
 #endif
-#if defined(ENABLE_CELLULAR) && (ENABLE_CELLULAR == 1)
-    type |= NETCONN_CELLULAR;
-#endif
     netmgr_init(type);
-
 #if defined(ENABLE_WIFI) && (ENABLE_WIFI == 1)
     netmgr_conn_set(NETCONN_WIFI, NETCONN_CMD_NETCFG, &(netcfg_args_t){.type = NETCFG_TUYA_BLE | NETCFG_TUYA_WIFI_AP});
 #endif
 
     PR_DEBUG("tuya_iot_init success");
+
+    ret = board_register_hardware();
+    if (ret != OPRT_OK) {
+        PR_ERR("board_register_hardware failed rt:%d", ret);
+    }
+
+    ret = ducky_claw_chat_init();
+    if (ret != OPRT_OK) {
+        PR_ERR("ducky_claw_chat_init failed rt:%d", ret);
+    }
+
     /* Start tuya iot task */
-    tuya_iot_start(&client);
+    tuya_iot_start(&ai_client);
+
+    tkl_wifi_set_lp_mode(0, 0);
 
     reset_netconfig_check();
 
     for (;;) {
         /* Loop to receive packets, and handles client keepalive */
-        tuya_iot_yield(&client);
+        tuya_iot_yield(&ai_client);
     }
 }
 
