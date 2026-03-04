@@ -156,7 +156,7 @@ int agent_loop_start_cb(void *data)
         return OPRT_MALLOC_FAILED;
     }
     memset(in.content, 0, strlen(GREETING_MESSAGE) + 1);
-    strncpy(in.content, GREETING_MESSAGE, strlen(GREETING_MESSAGE));
+    strncpy(in.content, GREETING_MESSAGE, strlen(GREETING_MESSAGE) + 1);
     message_bus_push_inbound(&in);
 
     return 0;

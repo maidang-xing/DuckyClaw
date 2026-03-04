@@ -16,8 +16,7 @@
 #include "tal_log.h"
 
 #include <string.h>
-
-static const char *TAG = "skills";
+#include <stdio.h>
 
 /* ================================================================== */
 /*  Built-in skill definitions                                        */
