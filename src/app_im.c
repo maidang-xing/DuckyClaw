@@ -34,7 +34,7 @@
 ***********************variable define**********************
 ***********************************************************/
 static THREAD_HANDLE s_outbound_thd = NULL;
-static THREAD_HANDLE s_inbound_thd  = NULL;
+// static THREAD_HANDLE s_inbound_thd  = NULL;
 
 static char *s_channel = NULL;
 static char s_chat_id[96] = {0};
