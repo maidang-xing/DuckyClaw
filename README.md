@@ -22,8 +22,7 @@ This project is build on top of the the TuyaOpen C SDK, which offers flexable cr
 ![GitHub Repo Banner](https://images.tuyacn.com/fe-static/docs/img/210f532a-0bb1-4ca5-9037-f5488958a709.jpg)
 
 
-**Your autonomous AI companion.**
-> Simplify Hardware Integration, Unlock Infinite Control Possibilities
+**Your autonomous AI companion.** Simplify Hardware Integration, Unlock Infinite Control Possibilities
 
 
 <!-- 
@@ -33,18 +32,6 @@ This project is build on top of the the TuyaOpen C SDK, which offers flexable cr
 
 > [!WARNING]
 > **🚧 Under Active Development** - This project is in heavy development and things will break. Running it now may spoil the experience we're building for you. Please visit or open Issues if you encountered any problem.
-
-
-
-
-
-
-AI agents today are powerful but complex, expensive to run, and heavy to set up. Tiny Claw believes AI should be **simple, affordable, and truly personal**, like having your own Codsworth or AYLA as a helpful friend. It achieves this by being a **native framework built from scratch** with a tiny core, plugin architecture, self-improving memory, and smart routing that tiers queries to cut costs. The result is an **autonomous, self-improving, self-learning, and self-configuring personal AI companion** that grows with you over time.
-
-Think of the **personal computer revolution**. Computers were once reserved for governments, military, and large corporations. Having one meant building it yourself or spending serious money. Then Apple came along and made them personal and accessible to everyone. Tiny Claw does the same for AI agents.
-
-
-
 
 
 ## ❓ Why  DuckyClaw?
