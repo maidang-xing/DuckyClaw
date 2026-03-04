@@ -46,6 +46,7 @@
 #include "app_im.h"
 #include "cli/serial_cli.h"
 #include "tools_register.h"
+#include "ws_server.h"
 #include "agent_loop.h"
 
 #if defined(ENABLE_QRCODE) && (ENABLE_QRCODE == 1)
@@ -359,6 +360,11 @@ void user_main(void)
     ret = app_im_init();
     if (ret != OPRT_OK) {
         PR_ERR("app_im_init failed rt:%d", ret);
+    }
+
+    ret = ws_server_start();
+    if (ret != OPRT_OK) {
+        PR_ERR("ws_server_start failed rt:%d", ret);
     }
 
     ret = tool_registry_init();
