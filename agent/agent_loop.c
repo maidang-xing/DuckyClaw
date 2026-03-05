@@ -23,11 +23,17 @@
 /***********************************************************
 ************************macro define************************
 ***********************************************************/
+#ifndef DUCKY_CLAW_AGENT_STACK
 #define DUCKY_CLAW_AGENT_STACK   (24*1024)
+#endif
 
-#define DUCKY_CLAW_CONTEXT_BUF_SIZE        (32 * 1024)
+#ifndef DUCKY_CLAW_CONTEXT_BUF_SIZE
+#define DUCKY_CLAW_CONTEXT_BUF_SIZE   (32 * 1024)
+#endif
 
-#define DUCKY_CLAW_HISTORY_MAX_COUNT 10
+#ifndef DUCKY_CLAW_HISTORY_MAX_COUNT
+#define DUCKY_CLAW_HISTORY_MAX_COUNT  10
+#endif
 
 /***********************************************************
 ***********************typedef define***********************

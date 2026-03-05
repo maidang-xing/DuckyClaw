@@ -696,7 +696,11 @@ OPERATE_RET ws_server_start(void)
     }
 
     THREAD_CFG_T cfg = {0};
+#ifdef CONFIG_WS_SERVER_STACK_SIZE
+    cfg.stackDepth   = CONFIG_WS_SERVER_STACK_SIZE;
+#else
     cfg.stackDepth   = 10 * 1024;
+#endif
     cfg.priority     = THREAD_PRIO_1;
     cfg.thrdname     = "claw_ws";
 

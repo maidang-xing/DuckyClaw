@@ -1,11 +1,15 @@
 #ifndef __IM_CONFIG_H__
 #define __IM_CONFIG_H__
 
+#include "tuya_cloud_types.h"
+
 /*
  * IM component compile-time defaults.
  * Override any value by defining it in im_secrets.h (not tracked by VCS).
  */
-#if __has_include("im_secrets.h")
+#if __has_include("tuya_app_config.h")
+#include "tuya_app_config.h"
+#elif __has_include("im_secrets.h")
 #include "im_secrets.h"
 #endif
 
@@ -87,7 +91,11 @@
 /* ---- Message bus / outbound ---- */
 
 #define IM_BUS_QUEUE_LEN           16
+#ifdef CONFIG_OUTBOUND_STACK_SIZE
+#define IM_OUTBOUND_STACK          CONFIG_OUTBOUND_STACK_SIZE
+#else
 #define IM_OUTBOUND_STACK          (12 * 1024)
+#endif
 #define IM_OUTBOUND_PRIO           5
 
 /* ---- NVS namespaces & keys ---- */

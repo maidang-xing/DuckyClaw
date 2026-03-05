@@ -19,7 +19,7 @@
 #include <assert.h>
 #include "cJSON.h"
 #include "tal_api.h"
-#include "tuya_config.h"
+#include "tuya_app_config.h"
 #include "tuya_iot.h"
 #include "tuya_iot_dp.h"
 #include "netmgr.h"
