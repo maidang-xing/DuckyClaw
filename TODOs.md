@@ -3,20 +3,19 @@
 - [x]  Use Tuya Cloud as the main agent
 - [x]  Add support to Whatsapp, Telegram, Feishu etc messaging support
 #### AI Engine 
-- [ ]  Agent Loop
+- [x]  Agent Loop
 
 #### Device MCP Tools
 - [x]  `CRON` Device Tool MCP
 - [x]  `FILE` Device Tool MCP
-- [ ]  `EXEC` Device Tool MCP : Raspberry pi exec injection
+- [x]  `EXEC` Device Tool MCP : Raspberry pi exec injection
 - [x]  `IoT device control` Tool MCP : control devices on the Tuya connected device Network
 #### Storage
-- [ ]  SD Card support for fs operations
-- [ ]  Local `Agent.txt` and `memory.txt` for custom agent prompting and memory local memory support
+- [x]  SD Card support for fs operations
+- [x]  Local `Agent.txt` and `memory.txt` for custom agent prompting and memory local memory support
 #### Others
 - [ ]  Audio ASR input, messaging app input, gateway switching mechanism
 - [ ]  CLI for more settings [Tuya Auth, and Messaging]
-- [ ]  App Panel for Setting Up IM token access key from APP
 
 ## Docs TODOs
 - [x]  Free Lic Guide
