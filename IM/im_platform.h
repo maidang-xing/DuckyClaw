@@ -24,11 +24,17 @@
 #define IM_LOGD(tag, fmt, ...) PR_DEBUG("[%s] " fmt, tag, ##__VA_ARGS__)
 
 /* ---- Memory ---- */
-
+#if defined(ENABLE_EXT_RAM) && (ENABLE_EXT_RAM == 1)
 #define im_malloc(size)          tal_psram_malloc(size)
 #define im_calloc(nmemb, size)   tal_psram_calloc(nmemb, size)
 #define im_realloc(ptr, size)    tal_psram_realloc(ptr, size)
 #define im_free(ptr)             tal_psram_free(ptr)
+#else
+#define im_malloc(size)          tal_malloc(size)
+#define im_calloc(nmemb, size)   tal_calloc(nmemb, size)
+#define im_realloc(ptr, size)    tal_realloc(ptr, size)
+#define im_free(ptr)             tal_free(ptr)
+#endif
 
 static inline char *im_strdup(const char *s)
 {
