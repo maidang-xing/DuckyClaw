@@ -10,5 +10,6 @@ rsource "./cron_service/Kconfig"
 rsource "./gateway/Kconfig"
 rsource "./IM/Kconfig"
 rsource "./agent/Kconfig"
+rsource "./tools/Kconfig"
 
 endmenu

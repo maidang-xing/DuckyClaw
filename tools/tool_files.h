@@ -16,11 +16,7 @@
 #include "tal_fs.h"
 
 #ifndef CLAW_USE_SDCARD
-#if defined(PLATFORM_LINUX) && (PLATFORM_LINUX == 1)
 #define CLAW_USE_SDCARD 0
-#else
-#define CLAW_USE_SDCARD 1
-#endif
 #endif
 
 #if defined(CLAW_USE_SDCARD) && (CLAW_USE_SDCARD == 1)
