@@ -9,7 +9,7 @@
 
 #include "tool_files.h"
 #include "memory_manager.h"
-
+#include "skill_loader.h"
 #include <stdio.h>
 
 #include "tal_api.h"
@@ -19,7 +19,7 @@
 ***********************************************************/
 #define SOUL_FILE CLAW_CONFIG_DIR "/SOUL.md"
 #define USER_FILE CLAW_CONFIG_DIR "/USER.md"
-
+#define CONTEXT_TMP_BUF_SIZE      4096
 /***********************************************************
 ***********************typedef define***********************
 ***********************************************************/
@@ -149,21 +149,37 @@ size_t context_build_system_prompt(char *buf, size_t size)
     off = append_file(buf, size, off, SOUL_FILE, "Personality");
     off = append_file(buf, size, off, USER_FILE, "User Info");
 
+    // Memory and skills may be long, so use a temporary buffer to read and append
+    char *tmp_buf = claw_malloc(CONTEXT_TMP_BUF_SIZE);
+    if (NULL == tmp_buf) {
+        PR_ERR("tmp buf malloc failed 4kb");
+        return off;
+    }
+
     // Long-term Memory
-    char mem_buf[4096];
-    memset(mem_buf, 0, sizeof(mem_buf));
-    if (memory_read_long_term(mem_buf, sizeof(mem_buf)) == OPRT_OK && mem_buf[0]) {
-        off += snprintf(buf + off, size - off, "\n## Long-term Memory\n\n%s\n", mem_buf);
+    memset(tmp_buf, 0, CONTEXT_TMP_BUF_SIZE);
+    if (memory_read_long_term(tmp_buf, CONTEXT_TMP_BUF_SIZE) == OPRT_OK && tmp_buf[0]) {
+        off += snprintf(buf + off, size - off, "\n## Long-term Memory\n\n%s\n", tmp_buf);
     }
 
     /* Recent daily notes (last 3 days) */
-    char recent_buf[4096];
-    memset(recent_buf, 0, sizeof(recent_buf));
-    if (memory_read_recent(recent_buf, sizeof(recent_buf), 3) == OPRT_OK && recent_buf[0]) {
-        off += snprintf(buf + off, size - off, "\n## Recent Notes\n\n%s\n", recent_buf);
+    memset(tmp_buf, 0, CONTEXT_TMP_BUF_SIZE);
+    if (memory_read_recent(tmp_buf, CONTEXT_TMP_BUF_SIZE, 3) == OPRT_OK && tmp_buf[0]) {
+        off += snprintf(buf + off, size - off, "\n## Recent Notes\n\n%s\n", tmp_buf);
     }
 
-    // TODO: Skills
+    /* Skills summary */
+    memset(tmp_buf, 0, CONTEXT_TMP_BUF_SIZE);
+    size_t skills_len = skill_loader_build_summary(tmp_buf, CONTEXT_TMP_BUF_SIZE);
+    if (skills_len > 0) {
+        off += snprintf(buf + off, size - off,
+                        "\n## Available Skills\n\n"
+                        "Available skills (use read_file to load full instructions):\n%s\n",
+                        tmp_buf);
+    }
+
+    // free temporary buffer
+    claw_free(tmp_buf);
 
     return off;
 }
