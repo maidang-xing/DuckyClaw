@@ -8,7 +8,7 @@
  */
 
 #include "tal_api.h"
-
+#include "tool_files.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -25,10 +25,10 @@
 
 /* ---- Memory ---- */
 
-#define im_malloc(size)          tal_psram_malloc(size)
-#define im_calloc(nmemb, size)   tal_psram_calloc(nmemb, size)
-#define im_realloc(ptr, size)    tal_psram_realloc(ptr, size)
-#define im_free(ptr)             tal_psram_free(ptr)
+#define im_malloc(size)          claw_malloc(size)
+#define im_calloc(nmemb, size)   claw_calloc(nmemb, size)
+#define im_realloc(ptr, size)    claw_realloc(ptr, size)
+#define im_free(ptr)             claw_free(ptr)
 
 static inline char *im_strdup(const char *s)
 {

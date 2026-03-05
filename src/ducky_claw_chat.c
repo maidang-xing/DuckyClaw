@@ -5,7 +5,7 @@
  */
 
 #include "tal_api.h"
-
+#include "tool_files.h"
 #include "netmgr.h"
 
 #include "ai_chat_main.h"
@@ -172,7 +172,7 @@ static void __ai_chat_handle_event(AI_NOTIFY_EVENT_T *event)
     switch (event->type) {
     case AI_USER_EVT_TEXT_STREAM_START: {
         if (stream_data == NULL) {
-            stream_data = tal_psram_malloc(STREAM_DATA_MAX_LEN);
+            stream_data = claw_malloc(STREAM_DATA_MAX_LEN);
             if (stream_data == NULL) {
                 PR_ERR("Failed to allocate stream data memory");
                 return;

@@ -19,13 +19,13 @@
 #include "ai_agent.h"
 #include "ai_chat_main.h"
 #include "tuya_cloud_types.h"
-
+#include "tool_files.h"
 /***********************************************************
 ************************macro define************************
 ***********************************************************/
-#define DUCKY_CLAW_AGENT_STACK   (24*1024)
+#define DUCKY_CLAW_AGENT_STACK   (4*1024)
 
-#define DUCKY_CLAW_CONTEXT_BUF_SIZE        (32 * 1024)
+#define DUCKY_CLAW_CONTEXT_BUF_SIZE        (4 * 1024)
 
 #define DUCKY_CLAW_HISTORY_MAX_COUNT 10
 
@@ -88,6 +88,8 @@ static void agent_loop_task(void *arg)
 {
     PR_DEBUG("Agent loop task started");
     while (1) {
+        tal_system_sleep(100);
+        
         im_msg_t in = {0};
         if (message_bus_pop_inbound(&in, UINT32_MAX) != OPRT_OK) continue;
         if (!in.content) continue;
@@ -135,9 +137,7 @@ static void agent_loop_task(void *arg)
         // add user context to history
         build_current_context("user", in.content);
 
-        tal_free(in.content);
-
-        tal_system_sleep(100);
+        claw_free(in.content);
     }
 }
 
@@ -151,7 +151,7 @@ int agent_loop_start_cb(void *data)
     im_msg_t in = {0};
     strncpy(in.channel, "system", sizeof(in.channel) - 1);
     strncpy(in.chat_id, "", sizeof(in.chat_id) - 1);
-    in.content = tal_psram_malloc(strlen(GREETING_MESSAGE) + 1);
+    in.content = claw_malloc(strlen(GREETING_MESSAGE) + 1);
     if (!in.content) {
         return OPRT_MALLOC_FAILED;
     }
@@ -171,7 +171,7 @@ OPERATE_RET agent_loop_init(void)
     }
 
     if (!s_total_prompt) {
-        s_total_prompt = tal_psram_malloc(DUCKY_CLAW_CONTEXT_BUF_SIZE);
+        s_total_prompt = claw_malloc(DUCKY_CLAW_CONTEXT_BUF_SIZE);
         if (!s_total_prompt) {
             return OPRT_MALLOC_FAILED;
         }

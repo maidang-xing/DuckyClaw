@@ -28,7 +28,7 @@
 
 #define CRON_FILE       CLAW_FS_ROOT_PATH "/cron.json"
 #define CRON_FILE_MAX   8192
-#define CRON_THREAD_STACK (6 * 1024)
+#define CRON_THREAD_STACK (3 * 1024)
 
 /***********************************************************
 ***********************variable define**********************

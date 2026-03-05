@@ -14,12 +14,14 @@
 #include "tuya_cloud_types.h"
 #include "ai_mcp_server.h"
 #include "tal_fs.h"
+#include "tal_memory.h"
+#include "tkl_memory.h"
 
 #ifndef CLAW_USE_SDCARD
 #if defined(PLATFORM_LINUX) && (PLATFORM_LINUX == 1)
 #define CLAW_USE_SDCARD 0
 #else
-#define CLAW_USE_SDCARD 1
+#define CLAW_USE_SDCARD 0
 #endif
 #endif
 
@@ -106,9 +108,22 @@ extern "C" {
 #define claw_dir_is_regular tal_dir_is_regular
 #endif
 
+#if defined(ENABLE_EXT_RAM) && (ENABLE_EXT_RAM == 1)
 #define claw_malloc    tal_psram_malloc
 #define claw_free      tal_psram_free
-
+#define claw_calloc    tal_psram_calloc
+#define claw_realloc   tal_psram_realloc
+#elif defined(PLATFORM_ESP32) && (PLATFORM_ESP32 == 1)
+#define claw_malloc    tkl_system_psram_malloc
+#define claw_free      tkl_system_psram_free
+#define claw_calloc    tkl_system_psram_calloc
+#define claw_realloc   tkl_system_psram_realloc
+#else
+#define claw_malloc    tal_malloc
+#define claw_free      tal_free
+#define claw_calloc    tal_calloc
+#define claw_realloc   tal_realloc
+#endif
 /***********************************************************
 ********************function declaration********************
 ***********************************************************/

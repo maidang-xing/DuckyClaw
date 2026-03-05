@@ -36,20 +36,60 @@ static void __get_date_str(char *buf, size_t size, int days_ago)
     if (days_ago > 0) {
         now -= (TIME_T)days_ago * 86400;
     }
-    if (now < 0) {
-        now = 0;
-    }
+    // TIME_T is unsigned int, so it cannot be negative
+    // The check if(now < 0) is invalid because unsigned types can't be negative
 
     POSIX_TM_S tm_now = {0};
     if (tal_time_get_local_time_custom(now, &tm_now) != OPRT_OK) {
         if (!tal_time_gmtime_r(&now, &tm_now)) {
-            snprintf(buf, size, "1970-01-01");
+            // Check if buffer is large enough for the fallback date
+            if (size >= sizeof("1970-01-01")) {
+                snprintf(buf, size, "1970-01-01");
+            } else {
+                // If buffer is too small, just fill with safe string
+                strncpy(buf, "1970", size - 1);
+                buf[size - 1] = '\0';
+            }
             return;
         }
     }
 
-    snprintf(buf, size, "%04d-%02d-%02d",
-             tm_now.tm_year + 1900, tm_now.tm_mon + 1, tm_now.tm_mday);
+    // We need to ensure the buffer is large enough for our date format
+    // The format is YYYY-MM-DD which requires 10 chars + 1 for null terminator = 11
+    if (size < 11) {
+        if (size >= 3) {
+            strcpy(buf, "NA");  // Not enough space, return "NA"
+        } else if (size == 2) {
+            buf[0] = 'N';
+            buf[1] = '\0';
+        } else if (size == 1) {
+            buf[0] = '\0';  // Just null terminate
+        }
+        return;
+    }
+    
+    // Use a temporary larger buffer to format the date string safely
+    char temp_buf[32];  // Large enough for any possible date format result
+    int formatted_len = snprintf(temp_buf, sizeof(temp_buf), "%04d-%02d-%02d",
+                                 tm_now.tm_year + 1900, tm_now.tm_mon + 1, tm_now.tm_mday);
+
+    // Now copy to the actual buffer, ensuring we don't exceed the size
+    if (formatted_len >= 0 && (size_t)formatted_len < size) {
+        strcpy(buf, temp_buf);
+    } else {
+        // Fallback to simple date if the formatted date doesn't fit
+        if (size >= sizeof("1970-01-01")) {
+            snprintf(buf, size, "1970-01-01");
+        } else {
+            // If buffer is too small, just fill with safe string
+            if (size > 1) {
+                buf[0] = 'N';
+                buf[1] = '\0';
+            } else if (size == 1) {
+                buf[0] = '\0';
+            }
+        }
+    }
 }
 
 OPERATE_RET memory_manager_init(void)

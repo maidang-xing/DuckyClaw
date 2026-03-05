@@ -68,7 +68,7 @@ static void outbound_dispatch_task(void *arg)
         } else if (strcmp(msg.channel, "system") == 0) {
             PR_INFO("system msg: %s", msg.content ? msg.content : "");
         }
-        tal_free(msg.content);
+        claw_free(msg.content);
     }
 }
 
@@ -167,7 +167,7 @@ OPERATE_RET app_im_bot_send_message(const char *message)
 
     PR_DEBUG("app im bot send message: channel=%s, chat_id=%s", out.channel, out.chat_id);
 
-    out.content = tal_psram_malloc(strlen(message) + 1);
+    out.content = claw_malloc(strlen(message) + 1);
     if (!out.content) {
         return OPRT_MALLOC_FAILED;
     }

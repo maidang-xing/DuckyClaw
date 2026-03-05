@@ -25,7 +25,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-
+#define CLAW_WS_THREAD_STACK_SIZE 2 * 1024
 /* ------------------------------------------------------------------ */
 /*  client structure                                                   */
 /* ------------------------------------------------------------------ */
@@ -696,7 +696,7 @@ OPERATE_RET ws_server_start(void)
     }
 
     THREAD_CFG_T cfg = {0};
-    cfg.stackDepth   = 10 * 1024;
+    cfg.stackDepth   = CLAW_WS_THREAD_STACK_SIZE;
     cfg.priority     = THREAD_PRIO_1;
     cfg.thrdname     = "claw_ws";
 

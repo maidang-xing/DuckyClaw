@@ -87,7 +87,7 @@
 /* ---- Message bus / outbound ---- */
 
 #define IM_BUS_QUEUE_LEN           16
-#define IM_OUTBOUND_STACK          (12 * 1024)
+#define IM_OUTBOUND_STACK          (4 * 1024)
 #define IM_OUTBOUND_PRIO           5
 
 /* ---- NVS namespaces & keys ---- */
