@@ -25,11 +25,6 @@ This project is build on top of the the TuyaOpen C SDK, which offers flexable cr
 **Your autonomous AI companion.** Simplify Hardware Integration, Unlock Infinite Control Possibilities
 
 
-<!-- 
-> [!NOTE]
-> **Developer Free License Available**: Unlimited AI Tokens. No more stress on token usage. -->
-
-
 > [!WARNING]
 > **🚧 Under Active Development** - This project is in heavy development and things will break. Running it now may spoil the experience we're building for you. Please visit or open Issues if you encountered any problem.
 
@@ -54,7 +49,7 @@ It’s lightweight and effortlessly deployable to almost any edge hardware. From
 | **Memory** | MEMORY.md + daily notes (YYYY-MM-DD.md); session manager; ported from MimiClaw-style store | OpenClaw: 24/7 persistent context, Obsidian/Raycast. MimiClaw: on-device MEMORY.md. Others: flat conversation history |
 | **Tools** | CRON, FILE, IoT device control (Tuya); EXEC (RPi) planned; MCP-style device tools | OpenClaw: browser automation, cron, ClawHub skills. MimiClaw: ReAct + web search, time, OTA, GPIO. Others: ad-hoc or single provider |
 | **✨ Setup** | Single TuyaOpen key; pick board (T5AI/ESP32/RPi/Linux), configure IM tokens | OpenClaw: Gateway, OAuth, multi-step. MimiClaw: flash firmware, API keys. Others: complex onboarding, many deps |
-| **✨ Cost** | Free Unlimited Tokens! | OpenClaw/MimiClaw: bring your own Claude/OpenAI. Others: Claude Pro/Max ($20–200/mo) or API-heavy |
+| **✨ Cost** | Low cost; unified key access to services | OpenClaw/MimiClaw: bring your own Claude/OpenAI. Others: Claude Pro/Max ($20–200/mo) or API-heavy |
 | **✨ Device IoT Control** | Native device and IoT control, controlling other device in the ecosystem (over TuyaOpen/embedded protocols) | ❌ (typically no built-in device control) |
 | **✨ Voice (ASR) Input** |  Hardware voice input (ASR) supported on select boards | ❌ (voice input not natively supported) |
 
