@@ -11,7 +11,7 @@
  */
 
 #include "ws_server.h"
-
+#include "tool_files.h"
 #include "ai_agent.h"
 #include "cJSON.h"
 #include "mix_method.h"
@@ -372,7 +372,7 @@ static OPERATE_RET ws_decode_one_frame(ws_client_t *client,
         off += sizeof(mask);
     }
 
-    uint8_t *data = malloc((size_t)plen + 1);
+    uint8_t *data = claw_malloc((size_t)plen + 1);
     if (!data) {
         return OPRT_MALLOC_FAILED;
     }
@@ -479,7 +479,7 @@ static void ws_process_client_buffer_locked(ws_client_t *client)
             break;
         }
         if (rt != OPRT_OK || consumed == 0) {
-            free(payload);
+            claw_free(payload);
             ws_close_client_locked(client);
             break;
         }
@@ -492,7 +492,7 @@ static void ws_process_client_buffer_locked(ws_client_t *client)
         } else if (opcode == 0x8) {
             /* close frame */
             (void)ws_send_frame(client->fd, 0x8, payload, payload_len);
-            free(payload);
+            claw_free(payload);
             ws_close_client_locked(client);
             break;
         } else if (opcode == 0x9) {
@@ -500,7 +500,7 @@ static void ws_process_client_buffer_locked(ws_client_t *client)
             (void)ws_send_frame(client->fd, 0xA, payload, payload_len);
         }
 
-        free(payload);
+        claw_free(payload);
     }
 }
 
