@@ -14,6 +14,7 @@
 #include "cron_service.h"
 
 #include "tal_api.h"
+#include "tool_files.h"
 #include "tal_time_service.h"
 #include "cJSON.h"
 
@@ -220,7 +221,7 @@ static OPERATE_RET __tool_cron_list(const MCP_PROPERTY_LIST_T *properties,
 
     /* Build listing string */
     size_t buf_size = 4096;
-    char *buf = (char *)tal_malloc(buf_size);
+    char *buf = (char *)claw_malloc(buf_size);
     if (!buf) {
         return OPRT_MALLOC_FAILED;
     }
@@ -250,7 +251,7 @@ static OPERATE_RET __tool_cron_list(const MCP_PROPERTY_LIST_T *properties,
     }
 
     ai_mcp_return_value_set_str(ret_val, buf);
-    tal_free(buf);
+    claw_free(buf);
 
     PR_DEBUG("cron_list: %d jobs", count);
     return OPRT_OK;
