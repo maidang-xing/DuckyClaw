@@ -20,6 +20,10 @@
 
 #include "tal_api.h"
 
+#if defined(PLATFORM_LINUX) && (PLATFORM_LINUX == 1)
+#include "tool_exec.h"
+#endif
+
 /***********************************************************
 ***********************function define**********************
 ***********************************************************/
@@ -27,6 +31,13 @@
 static OPERATE_RET __ai_mcp_init(void *data)
 {
     OPERATE_RET rt = OPRT_OK;
+
+    #if defined(PLATFORM_LINUX) && (PLATFORM_LINUX == 1)
+        rt = ai_mcp_server_init("DuckyClaw MCP Server", "1.0");
+        if (rt != OPRT_OK) {
+            return rt;
+        }
+    #endif
 
     /* Initialize filesystem (mount SD card if needed, create default files) */
     TUYA_CALL_ERR_RETURN(tool_files_fs_init());
@@ -54,6 +65,11 @@ static OPERATE_RET __ai_mcp_init(void *data)
 
     /* Register UART command tools */
     TUYA_CALL_ERR_RETURN(uart_cmd_register());
+
+    /* Register exec/system tools */
+    #if defined(PLATFORM_LINUX) && (PLATFORM_LINUX == 1)
+    TUYA_CALL_ERR_RETURN(tool_exec_register());
+    #endif
 
     PR_DEBUG("MCP Server initialized successfully with tools");
     return rt;
