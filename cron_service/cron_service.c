@@ -273,7 +273,7 @@ static void cron_process_due_jobs(void)
 {
     int64_t now     = cron_now_epoch();
     bool    changed = false;
-    PR_NOTICE("corn_get_now_epoch: %llu, job count: %d", now, s_job_count);
+    PR_NOTICE("cron_get_now_epoch: %llu, job count: %d", now, s_job_count);
 
     /* Skip if time not synced (still 1970) */
     if (now < 1000000000LL) {
@@ -329,6 +329,8 @@ static void cron_task_main(void *arg)
 
     while (1) {
         tal_system_sleep(CLAW_CRON_CHECK_INTERVAL_MS);
+        int now = tal_system_get_millisecond();
+        PR_NOTICE("cron_get_now_epoch: %llu", now);
         cron_process_due_jobs();
     }
 }

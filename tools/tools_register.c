@@ -11,6 +11,7 @@
 #include "tools_register.h"
 #include "tool_files.h"
 #include "tool_cron.h"
+#include "uart_cmd.h"
 #include "cron_service.h"
 #include "heartbeat.h"
 #include "memory_manager.h"
@@ -50,6 +51,9 @@ static OPERATE_RET __ai_mcp_init(void *data)
 
     /* Register cron tools */
     TUYA_CALL_ERR_RETURN(tool_cron_register());
+
+    /* Register UART command tools */
+    // TUYA_CALL_ERR_RETURN(uart_cmd_register());
 
     PR_DEBUG("MCP Server initialized successfully with tools");
     return rt;
