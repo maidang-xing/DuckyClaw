@@ -1474,3 +1474,134 @@ kws vad end
 [0;34;49m[03-06 16:35:11 ty N][cron_service.c:333] cron_get_now_epoch: 1772786101[0m
 [0;34;49m[03-06 16:35:11 ty N][cron_service.c:276] cron_get_now_epoch: 1772786111, job count: 0[0m
 [0;36;49m[03-06 16:35:13 ty I][ducky_claw_chat.c:52] Free heap size:112528, Free psram heap size:4488856[0m
+[0;32;49m[03-06 16:35:18 ty D][tuya_health.c:75] feed watchdog[0m
+[0;34;49m[03-06 16:35:21 ty N][cron_service.c:333] cron_get_now_epoch: 1772786111[0m
+[0;34;49m[03-06 16:35:21 ty N][cron_service.c:276] cron_get_now_epoch: 1772786121, job count: 0[0m
+[0;36;49m[03-06 16:35:23 ty I][ducky_claw_chat.c:52] Free heap size:112528, Free psram heap size:4488856[0m
+[0;32;49m[03-06 16:35:28 ty D][tuya_health.c:75] feed watchdog[0m
+[0;34;49m[03-06 16:35:31 ty N][cron_service.c:333] cron_get_now_epoch: 1772786121[0m
+[0;34;49m[03-06 16:35:31 ty N][cron_service.c:276] cron_get_now_epoch: 1772786131, job count: 0[0m
+[0;36;49m[03-06 16:35:33 ty I][ducky_claw_chat.c:52] Free heap size:112528, Free psram heap size:4488856[0m
+[0;32;49m[03-06 16:35:38 ty D][tuya_health.c:75] feed watchdog[0m
+[0;34;49m[03-06 16:35:41 ty N][cron_service.c:333] cron_get_now_epoch: 1772786131[0m
+[0;34;49m[03-06 16:35:41 ty N][cron_service.c:276] cron_get_now_epoch: 1772786141, job count: 0[0m
+[0;36;49m[03-06 16:35:43 ty I][ducky_claw_chat.c:52] Free heap size:112528, Free psram heap size:4488856[0m
+[0;32;49m[03-06 16:35:48 ty D][tuya_health.c:75] feed watchdog[0m
+[0;34;49m[03-06 16:35:51 ty N][cron_service.c:333] cron_get_now_epoch: 1772786141[0m
+[0;34;49m[03-06 16:35:51 ty N][cron_service.c:276] cron_get_now_epoch: 1772786151, job count: 0[0m
+[0;36;49m[03-06 16:35:53 ty I][ducky_claw_chat.c:52] Free heap size:112528, Free psram heap size:4488856[0m
+[0;32;49m[03-06 16:35:58 ty D][tuya_health.c:75] feed watchdog[0m
+kws vad on
+[0;32;49m[03-06 16:35:59 ty D][ai_audio_input.c:167] audio input -> wakup flag is 1, auto vad set from 2 to 1![0m
+[0;32;49m[03-06 16:35:59 ty D][ai_audio_input.c:138] audio input -> vad stat change to flag 1[0m
+[0;32;49m[03-06 16:35:59 ty D][ai_mode_wakeup.c:270] [====ai_wakeup] vad: [1][0m
+[0;32;49m[03-06 16:35:59 ty D][tuya_ai_agent.c:1443] set scode:[0m
+[0;32;49m[03-06 16:35:59 ty D][tuya_ai_input.c:264] ai input start, state:1[0m
+[0;32;49m[03-06 16:35:59 ty D][tuya_ai_input.c:344] recv queue state 1[0m
+[0;34;49m[03-06 16:35:59 ty N][tuya_ai_agent.c:623] set session active, scode:, sid:f29caa4b-afa7-4a75-8c6d-bea2-101ae337[0m
+[0;32;49m[03-06 16:35:59 ty D][tuya_ai_agent.c:1418] [upload event] type:0[0m
+[0;32;49m[03-06 16:35:59 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 249, sequence 98[0m
+[0;32;49m[03-06 16:35:59 ty D][tuya_ai_event.c:57] send event rt:0, type:0[0m
+[0;34;49m[03-06 16:35:59 ty N][tuya_ai_event.c:88] event id is 3d190cc2-3a8f-4da6-8506[0m
+[0;32;49m[03-06 16:35:59 ty D][tuya_ai_input.c:375] start lazy queue sync[0m
+[0;32;49m[03-06 16:35:59 ty D][tuya_ai_agent.c:136] [====ai event cb====] type:0, sid:f29caa4b-afa7-4a75-8c6d-bea2-101ae337, eid:3d190cc2-3a8f-4da6-8506[0m
+[0;32;49m[03-06 16:35:59 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 1, total_len:80, id:1[0m
+[0;32;49m[03-06 16:35:59 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 233, sequence 99[0m
+[0;32;49m[03-06 16:35:59 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:35:59 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 100[0m
+[0;32;49m[03-06 16:35:59 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:35:59 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 101[0m
+[0;32;49m[03-06 16:35:59 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:35:59 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 102[0m
+[0;32;49m[03-06 16:35:59 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:35:59 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 103[0m
+[0;32;49m[03-06 16:35:59 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:35:59 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 104[0m
+[0;32;49m[03-06 16:35:59 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 105[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 106[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 107[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 108[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 109[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 110[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 111[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 112[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 113[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 114[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 115[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 116[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 117[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 118[0m
+kws vad end
+[0;32;49m[03-06 16:36:00 ty D][ai_audio_input.c:167] audio input -> wakup flag is 1, auto vad set from 1 to 2![0m
+[0;32;49m[03-06 16:36:00 ty D][ai_audio_input.c:138] audio input -> vad stat change to flag 2[0m
+[0;32;49m[03-06 16:36:00 ty D][ai_mode_wakeup.c:270] [====ai_wakeup] vad: [2][0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_input.c:288] ai input stop, state:4[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_input.c:344] recv queue state 4[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 119[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 120[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 121[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 122[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 123[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 124[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 125[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 126[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 127[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 128[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 129[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 130[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 131[0m
+[0;32;49m[03-06 16:36:00 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:80 flag 2, total_len:80, id:1[0m
+[0;32;49m[03-06 16:36:01 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 132[0m
+[0;32;49m[03-06 16:36:01 ty D][tuya_ai_agent.c:1280] [ptype 31 upload stream] len:0 flag 3, total_len:0, id:1[0m
+[0;32;49m[03-06 16:36:01 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 105, sequence 133[0m
+[0;32;49m[03-06 16:36:01 ty D][tuya_ai_agent.c:1418] [upload event] type:1[0m
+[0;32;49m[03-06 16:36:01 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 134[0m
+[0;32;49m[03-06 16:36:01 ty D][tuya_ai_event.c:57] send event rt:0, type:1[0m
+[0;32;49m[03-06 16:36:01 ty D][tuya_ai_agent.c:1418] [upload event] type:2[0m
+[0;32;49m[03-06 16:36:01 ty D][tuya_ai_protocol.c:2789] send success, total bytes sent: 185, sequence 135[0m
+[0;32;49m[03-06 16:36:01 ty D][tuya_ai_event.c:57] send event rt:0, type:2[0m
+[0;34;49m[03-06 16:36:01 ty N][cron_service.c:333] cron_get_now_epoch: 1772786151[0m
+[0;34;49m[03-06 16:36:01 ty N][cron_service.c:276] cron_get_now_epoch: 1772786161, job count: 0[0m
+[0;32;49m[03-06 16:36:01 ty D][tuya_ai_agent.c:416] ASR text: [0m
+[0;32;49m[03-06 16:36:01 ty D][ai_agent.c:165] ignored alert: 7[0m
+[0;34;49m[03-06 16:36:01 ty N][ai_skill.c:106] text -> ASR result: [0m
+[0;32;49m[03-06 16:36:01 ty D][ai_mode_wakeup.c:217] [====ai_wakeup] event type: 0[0m
+[0;32;49m[03-06 16:36:01 ty D][ai_mode_wakeup.c:223] mode wakeup state change form LISTEN to LISTEN[0m
+[0;32;49m[03-06 16:36:01 ty D][tuya_ai_agent.c:136] [====ai event cb====] type:1, sid:f29caa4b-afa7-4a75-8c6d-bea2-101ae337, eid:3d190cc2-3a8f-4da6-8506[0m
+[0;32;49m[03-06 16:36:01 ty D][tuya_ai_agent.c:136] [====ai event cb====] type:2, sid:f29caa4b-afa7-4a75-8c6d-bea2-101ae337, eid:3d190cc2-3a8f-4da6-8506[0m
+[0;36;49m[03-06 16:36:03 ty I][ducky_claw_chat.c:52] Free heap size:112528, Free psram heap size:4488856[0m
+[0;32;49m[03-06 16:36:08 ty D][tuya_health.c:75] feed watchdog[0m
+[0;34;49m[03-06 16:36:11 ty N][cron_service.c:333] cron_get_now_epoch: 1772786161[0m
+[0;34;49m[03-06 16:36:11 ty N][cron_service.c:276] cron_get_now_epoch: 1772786171, job count: 0[0m
+[0;36;49m[03-06 16:36:13 ty I][ducky_claw_chat.c:52] Free heap size:112528, Free psram heap size:4488856[0m
+[0;32;49m[03-06 16:36:18 ty D][tuya_health.c:75] feed watchdog[0m
+[0;34;49m[03-06 16:36:21 ty N][cron_service.c:333] cron_get_now_epoch: 1772786171[0m
+[0;34;49m[03-06 16:36:21 ty N][cron_service.c:276] cron_get_now_epoch: 1772786181, job count: 0[0m
+[0;36;49m[03-06 16:36:23 ty I][ducky_claw_chat.c:52] Free heap size:112528, Free psram heap size:4488856[0m

@@ -53,7 +53,7 @@ static OPERATE_RET __ai_mcp_init(void *data)
     TUYA_CALL_ERR_RETURN(tool_cron_register());
 
     /* Register UART command tools */
-    // TUYA_CALL_ERR_RETURN(uart_cmd_register());
+    TUYA_CALL_ERR_RETURN(uart_cmd_register());
 
     PR_DEBUG("MCP Server initialized successfully with tools");
     return rt;
