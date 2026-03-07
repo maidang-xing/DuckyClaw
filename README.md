@@ -39,7 +39,7 @@ With a single TuyaOpen Key, you gain seamless access to the Tuya Cloud Platform 
 It’s lightweight and effortlessly deployable to almost any edge hardware. From WIFI connected MCUs to System on Chip ARM, to PC Ubuntus.
 
 
-| | DuckyClaw 🐜 | OpenClaw / MimiClaw / others |
+| | DuckyClaw  | OpenClaw / MimiClaw / others |
 |---|---|---|
 | **Architecture** | Hardware-oriented OpenClaw on TuyaOpen C SDK; device–cloud fusion | OpenClaw: Node.js, 24/7 desktop/server agent. MimiClaw: bare-metal C on ESP32-S3 only. Others: framework stacks (Pi, Claude Code, etc.) |
 | **Deployment** | MCUs (Tuya T5AI, ESP32s), SoCs (RPi 4/5, ARM Linux), PC (Ubuntu); one codebase | OpenClaw: Mac mini, Pi, VPS. MimiClaw: single $5 ESP32-S3. Others: server/desktop only, no edge MCU |
