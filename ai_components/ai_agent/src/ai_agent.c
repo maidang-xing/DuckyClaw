@@ -73,13 +73,17 @@ OPERATE_RET __ai_agent_event_cb(AI_EVENT_TYPE type, AI_PACKET_PT ptype, AI_EVENT
         ai_user_event_notify(AI_USER_EVT_CHAT_BREAK, NULL);
     }else if(AI_EVENT_SERVER_VAD == type) {
 		ai_user_event_notify(AI_USER_EVT_SERVER_VAD, NULL);
-	} else if ((AI_EVENT_END == type)) {
+    } else if ((AI_EVENT_END == type)) {
         if (AI_PT_AUDIO == ptype) {
 #if defined(ENABLE_COMP_AI_AUDIO) && (ENABLE_COMP_AI_AUDIO == 1)
             /* Stop audio player */
             ai_audio_play_tts_stream(AI_AUDIO_PLAYER_TTS_STOP, __s_audio_codec_type, (char*)eid, strlen(eid));
 #endif
         }
+        /* Notify upper layer that the full AI turn (including all MCP tool
+         * calls) has completed. agent_loop uses this to unblock the inner
+         * tool-use loop and decide whether to forward the response to IM. */
+        ai_user_event_notify(AI_USER_EVT_END, NULL);
     } else if (AI_EVENT_CHAT_EXIT == type) {
         /* Stop audio player */
         ai_user_event_notify(AI_USER_EVT_EXIT, NULL);

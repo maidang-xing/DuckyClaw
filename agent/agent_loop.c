@@ -59,8 +59,10 @@
 /* Maximum inner-loop iterations per user turn (mirrors MIMI_AGENT_MAX_TOOL_ITER) */
 #define TOOL_LOOP_MAX   10
 
-/* Timeout waiting for cloud AI to finish one round (ms) */
-#define TURN_WAIT_MS    30000
+/* Timeout waiting for cloud AI to finish one full round including all MCP
+ * tool calls within that round (ms).  A single AI session may invoke several
+ * tools sequentially before emitting AI_EVENT_END, so allow 120 s. */
+#define TURN_WAIT_MS    300 * 1000
 
 /* Buffer size for a single tool result string */
 #define TOOL_RESULT_BUF_SIZE  512
@@ -360,6 +362,22 @@ static void agent_loop_task(void *arg)
         char *cur_content = in.content;
 
         s_in_tool_loop = false;
+
+        /* Clear last-response buffer so a stale value from the previous turn
+         * is never forwarded if EVT_END fires before any new text arrives. */
+        if (s_last_response && s_last_response_lock) {
+            tal_mutex_lock(s_last_response_lock);
+            s_last_response[0] = '\0';
+            tal_mutex_unlock(s_last_response_lock);
+        }
+
+        /* Drain any stale semaphore counts left over from the previous turn.
+         * AI_USER_EVT_END may fire after the inner loop has already exited,
+         * leaving a residual count that would cause the next turn's wait() to
+         * return immediately with stale data. */
+        while (tal_semaphore_wait(s_turn.sem, 0) == OPRT_OK) {
+            PR_WARN("Drained stale semaphore count before new turn");
+        }
 
         while (iteration < TOOL_LOOP_MAX) {
             PR_INFO("--- LLM call iteration=%d ---", iteration + 1);
