@@ -62,8 +62,8 @@
 
 /* Timeout waiting for cloud AI to finish one full round including all MCP
  * tool calls within that round (ms).  A single AI session may invoke several
- * tools sequentially before emitting AI_EVENT_END, so allow 120 s. */
-#define TURN_WAIT_MS    300 * 1000
+ * tools sequentially before emitting AI_EVENT_END, so allow 300 s. */
+#define TURN_WAIT_MS    (120 * 1000)
 
 /* Buffer size for a single tool result string */
 #define TOOL_RESULT_BUF_SIZE  512
