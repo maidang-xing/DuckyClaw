@@ -25,6 +25,7 @@
 
 #include "agent_loop.h"
 #include "context_builder.h"
+#include "tool_files.h"
 
 #include "cJSON.h"
 #include "tal_api.h"
@@ -275,8 +276,10 @@ void agent_loop_notify_turn_done(void)
  *
  * @content:  Current message content to append (user text or tool result).
  * @is_tool:  True when content is a tool result (uses different section header).
+ * @summarize: True when the loop limit has been reached; instructs the AI to
+ *             summarise what it has done so far and stop calling tools.
  */
-static void __build_and_send(const char *content, bool is_tool)
+static void __build_and_send(const char *content, bool is_tool, bool summarize)
 {
     memset(s_total_prompt, 0, DUCKY_CLAW_CONTEXT_BUF_SIZE);
     size_t off = context_build_system_prompt(s_total_prompt, DUCKY_CLAW_CONTEXT_BUF_SIZE);
@@ -304,14 +307,25 @@ static void __build_and_send(const char *content, bool is_tool)
     tal_mutex_unlock(s_history_mutex);
 
     /* Append current content */
-    const char *header = is_tool
-        ? "\n\n# Tool Execution Result\n"
-          "The following tool was just executed. Review the result:\n"
-          "- SUCCESS and correct → provide your final answer to the user.\n"
-          "- FAILURE or incorrect → analyze and retry the tool with corrected parameters.\n"
-          "- Need another tool → call it now.\n"
-          "Tool result:\n"
-        : "\n\n# User Content\r\n";
+    const char *header;
+    if (summarize) {
+        header = "\n\n# Maximum Iterations Reached\n"
+                 "You have reached the tool-call limit for this turn. "
+                 "Do NOT call any more tools. "
+                 "Instead, summarise in Chinese what you have accomplished so far, "
+                 "what succeeded, what failed, and any next steps the user should take. "
+                 "Last tool result:\n";
+    } else if (is_tool) {
+        header = "\n\n# Tool Execution Result\n"
+                 "The following tool was just executed. Review the result:\n"
+                 "After executing a tool, the results of its use must be checked through some other tools (e.g., read_file).\n"
+                 "- SUCCESS and correct → provide your final answer to the user.\n"
+                 "- FAILURE or incorrect → analyze and retry the tool with corrected parameters.\n"
+                 "- Need another tool → call it now.\n"
+                 "Tool result:\n";
+    } else {
+        header = "\n\n# User Content\r\n";
+    }
 
     size_t needed = strlen(content) + strlen(header) + 1;
     if (off + needed > DUCKY_CLAW_CONTEXT_BUF_SIZE) {
@@ -321,7 +335,7 @@ static void __build_and_send(const char *content, bool is_tool)
     off += snprintf(s_total_prompt + off, DUCKY_CLAW_CONTEXT_BUF_SIZE - off,
                     "%s%s", header, content);
 
-    PR_DEBUG("Sending prompt (len=%u, is_tool=%d): %.200s ...", (unsigned)off, is_tool, s_total_prompt);
+    PR_NOTICE("Sending prompt (len=%u, is_tool=%d): %s ...", (unsigned)off, is_tool, s_total_prompt);
     ai_agent_send_text(s_total_prompt);
 }
 
@@ -342,7 +356,7 @@ static void agent_loop_task(void *arg)
             continue;
         }
         if (!in.content || !s_total_prompt) {
-            tal_free(in.content);
+            claw_free(in.content);
             continue;
         }
 
@@ -382,6 +396,11 @@ static void agent_loop_task(void *arg)
         while (iteration < TOOL_LOOP_MAX) {
             PR_INFO("--- LLM call iteration=%d ---", iteration + 1);
 
+            /* Notify the user via IM that the agent is still working.
+             * Sent at the start of every iteration so the user sees progress
+             * even when tool calls take a long time. */
+            app_im_bot_send_message("DuckyClaw is working...");
+
             /* Reset per-round tool state */
             if (s_turn.lock) {
                 tal_mutex_lock(s_turn.lock);
@@ -390,10 +409,18 @@ static void agent_loop_task(void *arg)
                 tal_mutex_unlock(s_turn.lock);
             }
 
-            /* Send prompt to cloud AI */
-            __build_and_send(cur_content, tool_loop);
+            /* On the last allowed iteration, ask the AI to summarise instead of
+             * calling more tools.  iteration is 0-based so the last slot is
+             * TOOL_LOOP_MAX-1. */
+            bool is_last = (iteration == TOOL_LOOP_MAX - 1);
+            if (is_last) {
+                PR_WARN("Reached max iterations (%d), requesting summary", TOOL_LOOP_MAX);
+            }
 
-            /* Block until STREAM_STOP (agent_loop_notify_turn_done posts sem) */
+            /* Send prompt to cloud AI */
+            __build_and_send(cur_content, tool_loop, is_last);
+
+            /* Block until AI_USER_EVT_END (agent_loop_notify_turn_done posts sem) */
             OPERATE_RET wait_rt = tal_semaphore_wait(s_turn.sem, TURN_WAIT_MS);
             if (wait_rt != OPRT_OK) {
                 PR_WARN("Turn wait timeout/error (rt=%d), aborting loop", wait_rt);
@@ -411,11 +438,11 @@ static void agent_loop_task(void *arg)
                 tal_mutex_unlock(s_turn.lock);
             }
 
-            PR_INFO("LLM iteration=%d tool_called=%d", iteration + 1, called);
+            PR_INFO("LLM iteration=%d tool_called=%d is_last=%d", iteration + 1, called, is_last);
 
-            if (!called) {
-                /* No tool call → this was the final response; forward to IM */
-                PR_INFO("No tool call, forwarding final response to IM");
+            if (!called || is_last) {
+                /* No tool call (or forced summary round) → forward final response to IM */
+                PR_INFO("Forwarding final response to IM (no_tool=%d is_last=%d)", !called, is_last);
                 if (s_last_response && s_last_response_lock) {
                     tal_mutex_lock(s_last_response_lock);
                     if (s_last_response[0] != '\0') {
@@ -436,7 +463,7 @@ static void agent_loop_task(void *arg)
         s_in_tool_loop = false;
         PR_INFO("===== AGENT TURN END iterations=%d =====", iteration + 1);
 
-        tal_free(in.content);
+        claw_free(in.content);
         tal_system_sleep(50);
     }
 }
@@ -450,11 +477,7 @@ int agent_loop_start_cb(void *data)
 
     im_msg_t in = {0};
     strncpy(in.channel, "system", sizeof(in.channel) - 1);
-#if defined(ENABLE_EXT_RAM) && (ENABLE_EXT_RAM == 1)
-    in.content = tal_psram_malloc(strlen(GREETING_MESSAGE) + 1);
-#else
-    in.content = tal_malloc(strlen(GREETING_MESSAGE) + 1);
-#endif
+    in.content = claw_malloc(strlen(GREETING_MESSAGE) + 1);
     if (!in.content) {
         return OPRT_MALLOC_FAILED;
     }

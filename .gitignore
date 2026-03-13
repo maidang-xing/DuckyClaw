@@ -51,6 +51,7 @@ tuya_app_config_secrets.h
 *.build
 app_default.config
 doc/
+monitor.log
 
 # Kernel Module Compile Results
 *.mod*

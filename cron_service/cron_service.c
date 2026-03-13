@@ -8,7 +8,8 @@
  *
  * Implements a cron-like scheduler that supports recurring ("every") and
  * one-shot ("at") jobs. Jobs are persisted to a JSON file on the filesystem.
- * When a job fires, it injects a message to the AI agent via ai_agent_send_text.
+ * When a job fires, it injects a message via message_bus_push_inbound so the
+ * agent_loop handles the full AI interaction and forwards the reply to IM.
  */
 
 #include "cron_service.h"
@@ -16,7 +17,7 @@
 
 #include "tal_api.h"
 #include "tal_time_service.h"
-#include "ai_agent.h"
+#include "bus/message_bus.h"
 #include "cJSON.h"
 
 #include <string.h>
@@ -328,7 +329,15 @@ static void cron_process_due_jobs(void)
                          "To delete, call cron_remove with job_id='%s'.",
                          job->name, job->id, (long long)job->at_epoch,
                          (long long)late_secs, job->id);
-                (void)ai_agent_send_text(msg);
+                im_msg_t im = {0};
+                strncpy(im.channel, "cron", sizeof(im.channel) - 1);
+                im.content = claw_malloc(strlen(msg) + 1);
+                if (im.content) {
+                    strncpy(im.content, msg, strlen(msg) + 1);
+                    (void)message_bus_push_inbound(&im);
+                } else {
+                    PR_ERR("cron: malloc failed for overdue msg");
+                }
                 /* Disable so it is not reported again on the next check */
                 job->enabled = false;
                 changed = true;
@@ -338,7 +347,15 @@ static void cron_process_due_jobs(void)
 
         /* Case 3: Reached reminder time → remind user, then delete/reschedule */
         PR_INFO("Cron firing: '%s' (%s)", job->name, job->id);
-        (void)ai_agent_send_text(job->message);
+        im_msg_t im = {0};
+        strncpy(im.channel, "cron", sizeof(im.channel) - 1);
+        im.content = claw_malloc(strlen(job->message) + 1);
+        if (im.content) {
+            strncpy(im.content, job->message, strlen(job->message) + 1);
+            (void)message_bus_push_inbound(&im);
+        } else {
+            PR_ERR("cron: malloc failed for job '%s'", job->name);
+        }
         job->last_run = now;
 
         if (job->kind == CRON_KIND_AT) {

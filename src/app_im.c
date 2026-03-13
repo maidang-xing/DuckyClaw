@@ -45,9 +45,12 @@ static char s_chat_id[96] = {0};
 
 void app_im_set_chat_id(const char *chat_id)
 {
-    if (chat_id) {
-        strncpy(s_chat_id, chat_id, sizeof(s_chat_id) - 1);
+    if (!chat_id || chat_id[0] == '\0') {
+        return;
     }
+    strncpy(s_chat_id, chat_id, sizeof(s_chat_id) - 1);
+    /* Persist so cron/system messages can be delivered after reboot */
+    (void)im_kv_set_string(IM_NVS_BOT, "chat_id", chat_id);
 }
 
 static void outbound_dispatch_task(void *arg)
@@ -90,6 +93,16 @@ static OPERATE_RET app_im_init_evt_cb(void *data)
     OPERATE_RET rt = OPRT_OK;
 
     PR_INFO("app im network connected, init im...");
+
+    /* Restore last known chat_id from KV so cron/system messages work after reboot */
+    if (s_chat_id[0] == '\0') {
+        char saved_chat_id[96] = {0};
+        if (im_kv_get_string(IM_NVS_BOT, "chat_id", saved_chat_id, sizeof(saved_chat_id)) == OPRT_OK
+                && saved_chat_id[0] != '\0') {
+            strncpy(s_chat_id, saved_chat_id, sizeof(s_chat_id) - 1);
+            PR_INFO("app im restored chat_id=%s from KV", s_chat_id);
+        }
+    }
 
     char        mode_kv[16] = {0};
     const char *mode        = IM_SECRET_CHANNEL_MODE;
