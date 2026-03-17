@@ -567,19 +567,19 @@ OPERATE_RET tool_files_fs_init(void)
         }
     }
     PR_DEBUG("SD card mounted at %s", CLAW_FS_MOUNT_PATH);
-#endif
 
     /* Create config directory */
-    // claw_fs_mkdir(CLAW_CONFIG_DIR);
+    claw_fs_mkdir(CLAW_CONFIG_DIR);
 
-    // /* Create default config files */
-    // TUYA_CALL_ERR_LOG(
-    //     __create_default_file(USER_FILE,
-    //                           "# User Config\n"));
+    /* Create default config files */
+    TUYA_CALL_ERR_LOG(
+        __create_default_file(USER_FILE,
+                              "# User Config\n"));
 
-    // TUYA_CALL_ERR_LOG(
-    //     __create_default_file(SOUL_FILE,
-    //                           "# Soul Config\n"));
+    TUYA_CALL_ERR_LOG(
+        __create_default_file(SOUL_FILE,
+                              "# Soul Config\n"));
+#endif
 
     PR_DEBUG("Filesystem initialized, root: %s", CLAW_FS_ROOT_PATH);
     return OPRT_OK;
