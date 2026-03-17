@@ -376,6 +376,7 @@ static void agent_loop_task(void *arg)
 
     while (1) {
         tal_system_sleep(50);
+        // PR_INFO("Device Free heap %d", tal_system_get_free_heap_size());
         im_msg_t in = {0};
         if (message_bus_pop_inbound(&in, UINT32_MAX) != OPRT_OK) {
             continue;
@@ -566,6 +567,8 @@ OPERATE_RET agent_loop_init(void)
     TUYA_CALL_ERR_RETURN(tal_thread_create_and_start(&s_agent_loop_thread, NULL, NULL,
                                                       agent_loop_task, NULL, &thrd_param));
 
-    // TUYA_CALL_ERR_RETURN(tal_event_subscribe(EVENT_AI_CLIENT_RUN, "agent_loop", agent_loop_start_cb, SUBSCRIBE_TYPE_NORMAL));
+    PR_INFO("Device Free heap %d", tal_system_get_free_heap_size());
+    // tal_event_subscribe(EVENT_AI_CLIENT_RUN, "agent_loop", agent_loop_start_cb, SUBSCRIBE_TYPE_NORMAL);
+
     return OPRT_OK;
 }
