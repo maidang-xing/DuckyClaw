@@ -36,6 +36,7 @@
 #include "tal_hash.h"
 #include "tal_log.h"
 #include "tal_api.h"
+#include "tal_semaphore.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -92,6 +93,13 @@ typedef struct {
 
     acp_reply_cb_t reply_cb;
     VOID_T        *reply_cb_data;
+
+    /* Synchronous send-and-wait support (for MCP tool callers) */
+    MUTEX_HANDLE   sync_mutex;
+    SEM_HANDLE     sync_sem;
+    BOOL_T         sync_waiting;
+    char           sync_reply_buf[ACP_CLIENT_REPLY_BUF_SIZE];
+    size_t         sync_reply_len;
 
     BOOL_T         stop_requested;
 } acp_ctx_t;
@@ -839,7 +847,18 @@ STATIC VOID_T __acp_dispatch(CONST CHAR_T *text, size_t text_len)
                 if (strcmp(state->valuestring, "final") == 0) {
                     PR_INFO("acp reply final len=%u: %.64s",
                             (unsigned)s_ctx.reply_len, s_ctx.reply_buf);
-                    if (s_ctx.reply_cb && s_ctx.reply_len > 0) {
+                    if (s_ctx.sync_waiting && s_ctx.reply_len > 0) {
+                        /* Sync caller (MCP tool) is waiting: copy reply and signal. */
+                        size_t copy_len = s_ctx.reply_len;
+                        if (copy_len >= ACP_CLIENT_REPLY_BUF_SIZE) {
+                            copy_len = ACP_CLIENT_REPLY_BUF_SIZE - 1;
+                        }
+                        memcpy(s_ctx.sync_reply_buf, s_ctx.reply_buf, copy_len);
+                        s_ctx.sync_reply_buf[copy_len] = '\0';
+                        s_ctx.sync_reply_len = copy_len;
+                        tal_semaphore_post(s_ctx.sync_sem);
+                    } else if (s_ctx.reply_cb && s_ctx.reply_len > 0) {
+                        /* Normal async path. */
                         s_ctx.reply_cb(s_ctx.reply_buf, s_ctx.reply_cb_data);
                     }
                     s_ctx.reply_len    = 0;
@@ -1105,6 +1124,18 @@ OPERATE_RET acp_client_init(VOID_T)
         return rt;
     }
 
+    rt = tal_mutex_create_init(&s_ctx.sync_mutex);
+    if (rt != OPRT_OK) {
+        PR_ERR("acp sync_mutex create failed rt=%d", rt);
+        return rt;
+    }
+
+    rt = tal_semaphore_create_init(&s_ctx.sync_sem, 0, 1);
+    if (rt != OPRT_OK) {
+        PR_ERR("acp sync_sem create failed rt=%d", rt);
+        return rt;
+    }
+
     THREAD_CFG_T cfg = {0};
     cfg.stackDepth = ACP_CLIENT_STACK_SIZE;
     cfg.priority   = THREAD_PRIO_1;
@@ -1206,4 +1237,84 @@ OPERATE_RET acp_client_stop(VOID_T)
     __disconnect();
     PR_INFO("acp client stop requested");
     return OPRT_OK;
+}
+
+/**
+ * @brief Query whether the ACP session is currently connected.
+ *
+ * Thread-safe: reads a single enum value that is only written from
+ * the acp_client task under the receive loop.
+ *
+ * @return TRUE  if the ACP session is established (hello-ok received).
+ * @return FALSE if disconnected or still connecting.
+ */
+BOOL_T acp_client_is_connected(VOID_T)
+{
+    return (s_ctx.state == ACP_STATE_CONNECTED) ? TRUE : FALSE;
+}
+
+/**
+ * @brief Send a message to OpenClaw and block until the reply arrives.
+ *
+ * Sends a chat.send request and waits (up to @p timeout_ms) for the
+ * agent's final reply.  The reply is copied into @p reply_buf on success.
+ *
+ * Only one sync caller may be active at a time; concurrent callers will
+ * block on the sync mutex and execute sequentially.
+ *
+ * @param[in]  text        NUL-terminated user message.
+ * @param[in]  timeout_ms  Maximum wait time in milliseconds.
+ * @param[out] reply_buf   Buffer to receive the agent reply.
+ * @param[in]  buf_len     Size of reply_buf (including NUL terminator).
+ * @return OPRT_OK         Reply received and copied to reply_buf.
+ * @return OPRT_TIMEOUT    No reply within timeout_ms.
+ * @return OPRT_RESOURCE_NOT_READY if ACP is not connected.
+ * @return OPRT_INVALID_PARM if any parameter is invalid.
+ */
+OPERATE_RET acp_client_send_and_wait(CONST CHAR_T *text, UINT32_T timeout_ms,
+                                     CHAR_T *reply_buf, size_t buf_len)
+{
+    if (!text || text[0] == '\0' || !reply_buf || buf_len == 0) {
+        return OPRT_INVALID_PARM;
+    }
+    if (s_ctx.state != ACP_STATE_CONNECTED) {
+        PR_WARN("[acp] send_and_wait: not connected");
+        return OPRT_RESOURCE_NOT_READY;
+    }
+
+    tal_mutex_lock(s_ctx.sync_mutex);
+
+    s_ctx.sync_waiting       = TRUE;
+    s_ctx.sync_reply_len     = 0;
+    s_ctx.sync_reply_buf[0]  = '\0';
+    reply_buf[0]             = '\0';
+
+    PR_INFO("[acp] send_and_wait: sending msg=%.64s timeout=%ums", text, (unsigned)timeout_ms);
+
+    OPERATE_RET rt = acp_client_inject(text);
+    if (rt != OPRT_OK) {
+        PR_ERR("[acp] send_and_wait: inject failed rt=%d", rt);
+        s_ctx.sync_waiting = FALSE;
+        tal_mutex_unlock(s_ctx.sync_mutex);
+        return rt;
+    }
+
+    rt = tal_semaphore_wait(s_ctx.sync_sem, timeout_ms);
+    s_ctx.sync_waiting = FALSE;
+
+    if (rt == OPRT_OK && s_ctx.sync_reply_len > 0) {
+        size_t copy_len = s_ctx.sync_reply_len;
+        if (copy_len >= buf_len) {
+            copy_len = buf_len - 1;
+        }
+        memcpy(reply_buf, s_ctx.sync_reply_buf, copy_len);
+        reply_buf[copy_len] = '\0';
+        PR_INFO("[acp] send_and_wait: reply len=%u: %.64s", (unsigned)copy_len, reply_buf);
+    } else {
+        PR_WARN("[acp] send_and_wait: timeout or empty reply rt=%d", rt);
+        rt = OPRT_TIMEOUT;
+    }
+
+    tal_mutex_unlock(s_ctx.sync_mutex);
+    return rt;
 }

@@ -3539,6 +3539,120 @@ OPERATE_RET feishu_send_message(const char *chat_id, const char *text, const cha
     return rt;
 }
 
+/**
+ * @brief Fetch all members of a Feishu group chat.
+ *
+ * Calls GET /open-apis/im/v1/chats/{chat_id}/members (paged) and builds a
+ * cJSON array:  [{"open_id":"ou_xxx","name":"张三"}, ...]
+ * Caller must call cJSON_Delete() on the returned array.
+ *
+ * @param[in]  chat_id   Group chat ID (oc_…).
+ * @param[out] out_json  Heap-allocated cJSON array on success.
+ * @return OPRT_OK on success.
+ */
+OPERATE_RET feishu_get_chat_members(const char *chat_id, cJSON **out_json)
+{
+    if (!chat_id || chat_id[0] == '\0' || !out_json) {
+        return OPRT_INVALID_PARM;
+    }
+    *out_json = NULL;
+
+    OPERATE_RET rt = ensure_tenant_token();
+    if (rt != OPRT_OK) {
+        return rt;
+    }
+
+    cJSON *members_arr = cJSON_CreateArray();
+    if (!members_arr) {
+        return OPRT_MALLOC_FAILED;
+    }
+
+    char *resp = (char *)im_malloc(FS_HTTP_RESP_BUF_SIZE);
+    if (!resp) {
+        cJSON_Delete(members_arr);
+        return OPRT_MALLOC_FAILED;
+    }
+
+    char page_token[256] = {0};
+    bool has_more        = true;
+
+    while (has_more) {
+        char path[384] = {0};
+        if (page_token[0] != '\0') {
+            snprintf(path, sizeof(path),
+                     "/open-apis/im/v1/chats/%s/members?member_id_type=open_id&page_size=100&page_token=%s",
+                     chat_id, page_token);
+        } else {
+            snprintf(path, sizeof(path),
+                     "/open-apis/im/v1/chats/%s/members?member_id_type=open_id&page_size=100",
+                     chat_id);
+        }
+
+        memset(resp, 0, FS_HTTP_RESP_BUF_SIZE);
+        uint16_t status = 0;
+        rt = fs_http_call(FS_HOST, path, "GET", NULL, s_tenant_token,
+                          resp, FS_HTTP_RESP_BUF_SIZE, &status);
+        if (rt != OPRT_OK || status != 200) {
+            IM_LOGW(TAG, "get_members failed rt=%d http=%u", rt, status);
+            break;
+        }
+
+        cJSON *root = cJSON_Parse(resp);
+        if (!root) {
+            break;
+        }
+
+        cJSON *data  = cJSON_GetObjectItem(root, "data");
+        cJSON *items = data ? cJSON_GetObjectItem(data, "items") : NULL;
+
+        if (cJSON_IsArray(items)) {
+            cJSON *item = NULL;
+            cJSON_ArrayForEach(item, items) {
+                const char *mid  = NULL;
+                const char *name = NULL;
+                cJSON      *v;
+
+                v = cJSON_GetObjectItem(item, "member_id");
+                if (cJSON_IsString(v) && v->valuestring) {
+                    mid = v->valuestring;
+                }
+                v = cJSON_GetObjectItem(item, "name");
+                if (cJSON_IsString(v) && v->valuestring) {
+                    name = v->valuestring;
+                }
+
+                if (mid && mid[0] != '\0') {
+                    cJSON *m = cJSON_CreateObject();
+                    if (m) {
+                        cJSON_AddStringToObject(m, "open_id", mid);
+                        if (name) {
+                            cJSON_AddStringToObject(m, "name", name);
+                        }
+                        cJSON_AddItemToArray(members_arr, m);
+                    }
+                }
+            }
+        }
+
+        has_more = false;
+        cJSON *hm = data ? cJSON_GetObjectItem(data, "has_more") : NULL;
+        if (cJSON_IsBool(hm) && cJSON_IsTrue(hm)) {
+            cJSON *pt = data ? cJSON_GetObjectItem(data, "page_token") : NULL;
+            if (cJSON_IsString(pt) && pt->valuestring && pt->valuestring[0] != '\0') {
+                snprintf(page_token, sizeof(page_token), "%s", pt->valuestring);
+                has_more = true;
+            }
+        }
+
+        cJSON_Delete(root);
+    }
+
+    im_free(resp);
+    *out_json = members_arr;
+    IM_LOGI(TAG, "get_members chat=%s count=%d", chat_id, cJSON_GetArraySize(members_arr));
+    return OPRT_OK;
+}
+
 OPERATE_RET feishu_set_app_id(const char *app_id)
 {
     if (!app_id) {

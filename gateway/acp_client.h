@@ -123,6 +123,35 @@ OPERATE_RET acp_client_inject(CONST CHAR_T *text);
  */
 OPERATE_RET acp_client_stop(VOID_T);
 
+/**
+ * @brief Query whether the ACP session is currently connected.
+ *
+ * @return TRUE  if the ACP session is established.
+ * @return FALSE if disconnected or still connecting.
+ */
+BOOL_T acp_client_is_connected(VOID_T);
+
+/**
+ * @brief Send a message to OpenClaw and block until the reply arrives.
+ *
+ * Sends a chat.send ACP request and waits up to @p timeout_ms for the
+ * agent's final reply.  Suitable for synchronous MCP tool callers.
+ *
+ * Only one sync caller may be active at a time; concurrent callers will
+ * execute sequentially.
+ *
+ * @param[in]  text        NUL-terminated user message.
+ * @param[in]  timeout_ms  Maximum wait time in milliseconds.
+ * @param[out] reply_buf   Buffer to receive the agent reply (NUL-terminated).
+ * @param[in]  buf_len     Size of reply_buf (must include space for NUL).
+ * @return OPRT_OK                on success (reply in reply_buf).
+ * @return OPRT_TIMEOUT           if no reply within timeout_ms.
+ * @return OPRT_RESOURCE_NOT_READY if ACP session not connected.
+ * @return OPRT_INVALID_PARM      if any parameter is invalid.
+ */
+OPERATE_RET acp_client_send_and_wait(CONST CHAR_T *text, UINT32_T timeout_ms,
+                                     CHAR_T *reply_buf, size_t buf_len);
+
 #ifdef __cplusplus
 }
 #endif

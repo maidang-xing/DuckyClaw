@@ -200,18 +200,18 @@ static void __ai_chat_handle_event(AI_NOTIFY_EVENT_T *event)
          * the gateway can also process the query and display its reply on
          * screen.
          */
-        AI_NOTIFY_TEXT_T *asr = (AI_NOTIFY_TEXT_T *)event->data;
-        if (!asr || asr->datalen == 0 || !asr->data) {
-            break;
-        }
-        CHAR_T *asr_text = (CHAR_T *)tal_malloc(asr->datalen + 1);
-        if (asr_text) {
-            memcpy(asr_text, asr->data, asr->datalen);
-            asr_text[asr->datalen] = '\0';
-            PR_DEBUG("[openclaw] inject asr: %.64s", asr_text);
-            acp_client_inject(asr_text);
-            tal_free(asr_text);
-        }
+        // AI_NOTIFY_TEXT_T *asr = (AI_NOTIFY_TEXT_T *)event->data;
+        // if (!asr || asr->datalen == 0 || !asr->data) {
+        //     break;
+        // }
+        // CHAR_T *asr_text = (CHAR_T *)tal_malloc(asr->datalen + 1);
+        // if (asr_text) {
+        //     memcpy(asr_text, asr->data, asr->datalen);
+        //     asr_text[asr->datalen] = '\0';
+        //     PR_DEBUG("[openclaw] inject asr: %.64s", asr_text);
+        //     acp_client_inject(asr_text);
+        //     tal_free(asr_text);
+        // }
     } break;
     case AI_USER_EVT_TEXT_STREAM_START: {
         if (stream_data == NULL) {

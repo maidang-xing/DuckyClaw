@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 #include "im_platform.h"
+#include "cJSON.h"
 
 /* ---------------------------------------------------------------------------
  * Type definitions
@@ -62,6 +63,27 @@ OPERATE_RET feishu_bot_start(VOID_T);
  * @return OPRT_OK on success
  */
 OPERATE_RET feishu_send_message(const char *chat_id, const char *text, const char *mentions_json);
+
+/**
+ * @brief Fetch all members of a Feishu group chat.
+ *
+ * Calls GET /open-apis/im/v1/chats/{chat_id}/members (handles pagination) and
+ * returns a cJSON array of member objects:
+ * @code
+ * [{"open_id":"ou_xxx","name":"张三"}, {"open_id":"ou_yyy","name":"openclaw"}, ...]
+ * @endcode
+ * The caller is responsible for calling cJSON_Delete() on the returned array.
+ *
+ * Typical usage by the AI agent:
+ *   1. Call feishu_get_members MCP tool → receives JSON member list.
+ *   2. Choose the target member (e.g. "openclaw").
+ *   3. Pass the member's open_id as mentions_json in openclaw_ctrl.
+ *
+ * @param[in]  chat_id   Group chat ID (oc_…).
+ * @param[out] out_json  Heap-allocated cJSON array; caller must cJSON_Delete().
+ * @return OPRT_OK on success, error code on failure.
+ */
+OPERATE_RET feishu_get_chat_members(const char *chat_id, cJSON **out_json);
 
 /**
  * @brief Set feishu app_id credential
