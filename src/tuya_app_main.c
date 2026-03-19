@@ -47,7 +47,11 @@
 #include "cli/serial_cli.h"
 #include "tools_register.h"
 #include "ws_server.h"
+#include "acp_client.h"
 #include "agent_loop.h"
+#if defined(ENABLE_COMP_AI_DISPLAY) && (ENABLE_COMP_AI_DISPLAY == 1)
+#include "ai_ui_stream_text.h"
+#endif
 
 #if defined(ENABLE_QRCODE) && (ENABLE_QRCODE == 1)
 #include "qrencode_print.h"
@@ -272,6 +276,34 @@ bool user_network_check(void)
     return status == NETMGR_LINK_DOWN ? false : true;
 }
 
+/**
+ * @brief ACP reply callback – relay OpenClaw agent response to the IM channel.
+ * @param[in] text       Complete assistant reply from OpenClaw (NUL-terminated).
+ * @param[in] user_data  Unused.
+ * @return none
+ */
+static void s_on_acp_reply(const char *text, void *user_data)
+{
+    (void)user_data;
+    if (!text || text[0] == '\0') {
+        return;
+    }
+
+    /* Relay to IM channel (e.g. Feishu bot) */
+    app_im_bot_send_message(text);
+
+#if defined(ENABLE_COMP_AI_DISPLAY) && (ENABLE_COMP_AI_DISPLAY == 1)
+    /*
+     * Display the openclaw reply on screen word-by-word.
+     * ai_ui_stream_text drains the ring buffer via its internal timer,
+     * showing STREAM_TEXT_SHOW_WORD_NUM words every tick.
+     */
+    ai_ui_stream_text_start();
+    ai_ui_stream_text_write(text);
+    ai_ui_stream_text_end();
+#endif
+}
+
 void user_main(void)
 {
     int ret = OPRT_OK;
@@ -370,6 +402,14 @@ void user_main(void)
     ret = tool_registry_init();
     if (ret != OPRT_OK) {
         PR_ERR("tool_registry_init failed rt:%d", ret);
+    }
+
+    /* ACP reply callback: relay OpenClaw agent responses to the IM channel */
+    acp_client_set_reply_cb(s_on_acp_reply, NULL);
+
+    ret = acp_client_init();
+    if (ret != OPRT_OK) {
+        PR_ERR("acp_client_init failed rt:%d", ret);
     }
 
     ret = agent_loop_init();

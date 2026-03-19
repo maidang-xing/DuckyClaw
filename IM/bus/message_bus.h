@@ -6,10 +6,21 @@
 #define IM_CHAN_TELEGRAM  "telegram"
 #define IM_CHAN_DISCORD   "discord"
 #define IM_CHAN_FEISHU    "feishu"
+
+/**
+ * @brief Inbound/outbound message on the IM bus.
+ *
+ * mentions_json (optional): JSON array of mention targets extracted from the
+ * inbound Feishu event, serialised as:
+ *   [{"open_id":"ou_xxx","name":"张三"}, ...]
+ * Set by feishu_bot.c on inbound, consumed by app_im.c on outbound.
+ * NULL when no mentions are present or for non-Feishu channels.
+ */
 typedef struct {
     char  channel[16];
     char  chat_id[96];
     char *content;
+    char *mentions_json;
 } im_msg_t;
 
 OPERATE_RET message_bus_init(void);

@@ -18,6 +18,27 @@
 extern "C" {
 #endif
 
+/* ---------------------------------------------------------------------------
+ * ACP Gateway configuration (openclaw direct connection)
+ * Override in tuya_app_config_secrets.h for environment-specific values.
+ * --------------------------------------------------------------------------- */
+
+#ifndef ACP_GATEWAY_HOST
+#define ACP_GATEWAY_HOST    "192.168.1.1"   /* Linux machine LAN IP */
+#endif
+
+#ifndef ACP_GATEWAY_PORT
+#define ACP_GATEWAY_PORT    18789
+#endif
+
+#ifndef ACP_GATEWAY_TOKEN
+#define ACP_GATEWAY_TOKEN   ""              /* Set in tuya_app_config_secrets.h */
+#endif
+
+#ifndef ACP_DEVICE_ID
+#define ACP_DEVICE_ID       "duckyclaw-001" /* Unique per device, e.g. MAC address */
+#endif
+
 // https://pbt.tuya.com/s?p=dd46368ae3840e54f018b2c45dc1550b&u=c38c8fc0a5d14c4f66cae9f0cfcb2a24&t=2
 #ifndef TUYA_PRODUCT_ID
 #define TUYA_PRODUCT_ID "xxxxxxxxxxxxxxxx"

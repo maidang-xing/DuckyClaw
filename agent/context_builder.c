@@ -146,6 +146,15 @@ size_t context_build_system_prompt(char *buf, size_t size)
                     "- Access the internet beyond web_search.\n\n");
 
     off += snprintf(buf + off, size - off,
+                    "## @Mention Behaviour (CRITICAL)\n"
+                    "The system automatically handles @mentions. STRICT RULES:\n"
+                    "1. NEVER write @name, @username, or any @-prefixed token in your reply text. "
+                    "Do NOT copy or repeat any @-prefixed word from the user's message.\n"
+                    "2. When a user asks you to @mention someone, the @mention is added "
+                    "automatically to your reply. Write only the message content itself.\n"
+                    "3. Violating this rule causes broken or duplicate mentions in Feishu.\n\n");
+
+    off += snprintf(buf + off, size - off,
                     "## Memory\n"
                     "You have persistent memory stored on local flash:\n"
                     "- Long-term memory: /memory/MEMORY.md\n"

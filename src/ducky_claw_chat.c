@@ -11,9 +11,14 @@
 #include "ai_chat_main.h"
 #include "ducky_claw_chat.h"
 #include "agent_loop.h"
+#include "acp_client.h"
 
 #include "app_im.h"
 #include "tal_log.h"
+
+#if defined(ENABLE_COMP_AI_DISPLAY) && (ENABLE_COMP_AI_DISPLAY == 1)
+#include "ai_ui_stream_text.h"
+#endif
 
 #if defined(ENABLE_WIFI) && (ENABLE_WIFI == 1)
 #include "tkl_wifi.h"
@@ -44,6 +49,24 @@ static TIMER_ID            sg_disp_status_tm;
 /***********************************************************
 ***********************function define**********************
 ***********************************************************/
+#if defined(ENABLE_COMP_AI_DISPLAY) && (ENABLE_COMP_AI_DISPLAY == 1)
+/**
+ * @brief Display callback for openclaw stream text.
+ *
+ * Forwards each word-batch from the ring buffer to the status display panel.
+ * Called by the stream-text timer with NULL when the stream ends.
+ *
+ * @param[in] string  NUL-terminated word batch, or NULL when stream ends.
+ * @return none
+ */
+static void __openclaw_stream_disp_cb(char *string)
+{
+    if (string) {
+        ai_ui_disp_msg(AI_UI_DISP_STATUS, (uint8_t *)string, strlen(string));
+    }
+}
+#endif
+
 static void __printf_free_heap_tm_cb(TIMER_ID timer_id, void *arg)
 {
 #if defined(ENABLE_EXT_RAM) && (ENABLE_EXT_RAM == 1)
@@ -170,6 +193,26 @@ static void __ai_chat_handle_event(AI_NOTIFY_EVENT_T *event)
 
 
     switch (event->type) {
+    case AI_USER_EVT_ASR_OK: {
+        /*
+         * User speech recognised – forward the ASR text to the openclaw
+         * gateway in parallel with the TuyaOS AI pipeline so the LLM on
+         * the gateway can also process the query and display its reply on
+         * screen.
+         */
+        AI_NOTIFY_TEXT_T *asr = (AI_NOTIFY_TEXT_T *)event->data;
+        if (!asr || asr->datalen == 0 || !asr->data) {
+            break;
+        }
+        CHAR_T *asr_text = (CHAR_T *)tal_malloc(asr->datalen + 1);
+        if (asr_text) {
+            memcpy(asr_text, asr->data, asr->datalen);
+            asr_text[asr->datalen] = '\0';
+            PR_DEBUG("[openclaw] inject asr: %.64s", asr_text);
+            acp_client_inject(asr_text);
+            tal_free(asr_text);
+        }
+    } break;
     case AI_USER_EVT_TEXT_STREAM_START: {
         if (stream_data == NULL) {
 #if defined(ENABLE_EXT_RAM) && (ENABLE_EXT_RAM == 1)
@@ -256,6 +299,10 @@ OPERATE_RET ducky_claw_chat_init(void)
     };
 
     TUYA_CALL_ERR_RETURN(ai_picture_output_init(&picture_output_cfg));
+#endif
+
+#if defined(ENABLE_COMP_AI_DISPLAY) && (ENABLE_COMP_AI_DISPLAY == 1)
+    TUYA_CALL_ERR_RETURN(ai_ui_stream_text_init(__openclaw_stream_disp_cb));
 #endif
 
     // Free heap size

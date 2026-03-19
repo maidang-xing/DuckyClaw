@@ -13,6 +13,7 @@
 #include "ai_agent.h"
 #include "ai_chat_main.h"
 #include "tal_system.h"
+#include "channels/feishu_bot.h"
 #include <stdatomic.h>
 
 /***********************************************************
@@ -67,11 +68,14 @@ static void outbound_dispatch_task(void *arg)
         } else if (strcmp(msg.channel, IM_CHAN_DISCORD) == 0) {
             (void)discord_send_message(msg.chat_id, msg.content ? msg.content : "");
         } else if (strcmp(msg.channel, IM_CHAN_FEISHU) == 0) {
-            (void)feishu_send_message(msg.chat_id, msg.content ? msg.content : "");
+            (void)feishu_send_message(msg.chat_id,
+                                      msg.content ? msg.content : "",
+                                      msg.mentions_json);
         } else if (strcmp(msg.channel, "system") == 0) {
             PR_INFO("system msg: %s", msg.content ? msg.content : "");
         }
         im_free(msg.content);
+        im_free(msg.mentions_json);
     }
 }
 
@@ -166,6 +170,11 @@ OPERATE_RET app_im_init(void)
 
 OPERATE_RET app_im_bot_send_message(const char *message)
 {
+    return app_im_bot_send_message_with_mentions(message, NULL);
+}
+
+OPERATE_RET app_im_bot_send_message_with_mentions(const char *message, const char *mentions_json)
+{
     if (!message) {
         return OPRT_INVALID_PARM;
     }
@@ -194,6 +203,14 @@ OPERATE_RET app_im_bot_send_message(const char *message)
     }
     memset(out.content, 0, strlen(message) + 1);
     strncpy(out.content, message, strlen(message) + 1);
+
+    if (mentions_json && mentions_json[0] != '\0') {
+        out.mentions_json = im_strdup(mentions_json);
+        if (!out.mentions_json) {
+            im_free(out.content);
+            return OPRT_MALLOC_FAILED;
+        }
+    }
 
     message_bus_push_outbound(&out);
 
