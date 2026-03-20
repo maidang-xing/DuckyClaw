@@ -351,12 +351,12 @@ STATIC OPERATE_RET __ws_upgrade(INT_T fd, CONST CHAR_T *host, UINT16_T port)
     INT_T  n = snprintf(req, sizeof(req),
         "GET / HTTP/1.1\r\n"
         "Host: %s:%u\r\n"
-        "Origin: http://localhost:%u\r\n"
+        "Origin: http://%s:%u\r\n"
         "Upgrade: websocket\r\n"
         "Connection: Upgrade\r\n"
         "Sec-WebSocket-Key: %s\r\n"
         "Sec-WebSocket-Version: 13\r\n\r\n",
-        host, (unsigned)port, (unsigned)port, client_key);
+        host, (unsigned)port, host, (unsigned)port, client_key);
     if (n <= 0 || (size_t)n >= sizeof(req)) {
         return OPRT_BUFFER_NOT_ENOUGH;
     }

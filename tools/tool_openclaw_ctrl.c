@@ -101,6 +101,93 @@ static BOOL_T __load_chat_id(char *buf, size_t buf_size)
     return FALSE;
 }
 
+/**
+ * @brief Auto-build a mentions_json string for a named target.
+ *
+ * Fetches the Feishu group member list for @p chat_id, searches for the first
+ * member whose name contains @p target_name (case-insensitive), and builds a
+ * JSON array string:  [{"open_id":"ou_xxx","name":"openclaw"}]
+ *
+ * If no matching member is found, the buffer is left as an empty string and
+ * FALSE is returned; the caller should then send without @mention.
+ *
+ * @param[in]  chat_id      Group chat_id.
+ * @param[in]  target_name  Name substring to search for (e.g. "openclaw").
+ * @param[out] buf          Output buffer for the JSON string.
+ * @param[in]  buf_size     Size of @p buf.
+ * @return TRUE if a matching member was found and @p buf was populated.
+ */
+static BOOL_T __auto_resolve_mention(const char *chat_id, const char *target_name,
+                                     char *buf, size_t buf_size)
+{
+    buf[0] = '\0';
+    if (!chat_id || chat_id[0] == '\0' || !target_name || !buf || buf_size == 0) {
+        return FALSE;
+    }
+
+    cJSON *members = NULL;
+    OPERATE_RET rt = feishu_get_chat_members(chat_id, &members);
+    if (rt != OPRT_OK || !members) {
+        if (members) {
+            cJSON_Delete(members);
+        }
+        return FALSE;
+    }
+
+    BOOL_T found = FALSE;
+    int count = cJSON_GetArraySize(members);
+    for (int i = 0; i < count; i++) {
+        cJSON *m    = cJSON_GetArrayItem(members, i);
+        cJSON *oid  = m ? cJSON_GetObjectItem(m, "open_id") : NULL;
+        cJSON *name = m ? cJSON_GetObjectItem(m, "name")    : NULL;
+
+        if (!cJSON_IsString(oid) || !oid->valuestring || oid->valuestring[0] == '\0') {
+            continue;
+        }
+        if (!cJSON_IsString(name) || !name->valuestring) {
+            continue;
+        }
+
+        /* Case-insensitive substring match */
+        const char *n = name->valuestring;
+        const char *t = target_name;
+
+        /* Simple manual tolower search to avoid locale issues */
+        size_t tlen = strlen(t);
+        size_t nlen = strlen(n);
+        BOOL_T match = FALSE;
+        if (tlen <= nlen) {
+            for (size_t j = 0; j <= nlen - tlen && !match; j++) {
+                BOOL_T ok = TRUE;
+                for (size_t k = 0; k < tlen && ok; k++) {
+                    char nc = n[j + k];
+                    char tc = t[k];
+                    if (nc >= 'A' && nc <= 'Z') { nc += ('a' - 'A'); }
+                    if (tc >= 'A' && tc <= 'Z') { tc += ('a' - 'A'); }
+                    if (nc != tc) { ok = FALSE; }
+                }
+                if (ok) { match = TRUE; }
+            }
+        }
+
+        if (match) {
+            snprintf(buf, buf_size,
+                     "[{\"open_id\":\"%s\",\"name\":\"%s\"}]",
+                     oid->valuestring, name->valuestring);
+            PR_INFO("[openclaw_ctrl] auto-mention: found '%s' open_id=%s",
+                    name->valuestring, oid->valuestring);
+            found = TRUE;
+            break;
+        }
+    }
+
+    cJSON_Delete(members);
+    if (!found) {
+        PR_WARN("[openclaw_ctrl] auto-mention: no member matching '%s' found", target_name);
+    }
+    return found;
+}
+
 /* ---------------------------------------------------------------------------
  * Tool: feishu_get_members
  * --------------------------------------------------------------------------- */
@@ -246,12 +333,37 @@ static OPERATE_RET __tool_openclaw_ctrl(const MCP_PROPERTY_LIST_T *properties,
     }
 
     /* -----------------------------------------------------------------------
-     * Fallback path: Feishu rich-text with agent-chosen @mentions
+     * Fallback path: Feishu rich-text with @mentions
+     *
+     * Priority:
+     *   1. Agent-provided mentions_json (explicit, from feishu_get_members).
+     *   2. Auto-resolve: fetch members and search for "openclaw" by name.
+     *   3. No @mention (plain text) if resolution fails.
      * ----------------------------------------------------------------------- */
-    PR_INFO("[openclaw_ctrl] Feishu fallback mentions=%s msg=%.128s",
-            mentions_json ? mentions_json : "(none)", message);
+    const char *effective_mentions = NULL;
+    char        auto_mention_buf[256] = {0};
 
-    OPERATE_RET fb_rt = app_im_bot_send_message_with_mentions(message, mentions_json);
+    if (mentions_json && mentions_json[0] != '\0') {
+        /* Agent explicitly provided mentions. */
+        effective_mentions = mentions_json;
+        PR_INFO("[openclaw_ctrl] Feishu fallback using agent-provided mentions");
+    } else {
+        /* Try to auto-resolve @openclaw from the group member list. */
+        char chat_id[96] = {0};
+        if (__load_chat_id(chat_id, sizeof(chat_id))) {
+            if (__auto_resolve_mention(chat_id, "openclaw",
+                                       auto_mention_buf, sizeof(auto_mention_buf))) {
+                effective_mentions = auto_mention_buf;
+            }
+        } else {
+            PR_WARN("[openclaw_ctrl] chat_id not set, cannot auto-resolve @mention");
+        }
+    }
+
+    PR_INFO("[openclaw_ctrl] Feishu fallback effective_mentions=%s msg=%.128s",
+            effective_mentions ? effective_mentions : "(none)", message);
+
+    OPERATE_RET fb_rt = app_im_bot_send_message_with_mentions(message, effective_mentions);
     if (fb_rt != OPRT_OK) {
         PR_ERR("[openclaw_ctrl] Feishu send failed rt=%d", fb_rt);
         ai_mcp_return_value_set_str(ret_val,
@@ -259,12 +371,12 @@ static OPERATE_RET __tool_openclaw_ctrl(const MCP_PROPERTY_LIST_T *properties,
         return fb_rt;
     }
 
-    if (mentions_json && mentions_json[0] != '\0') {
+    if (effective_mentions && effective_mentions[0] != '\0') {
         ai_mcp_return_value_set_str(ret_val,
             "Message sent via Feishu with @mention (OpenClaw WS not connected)");
     } else {
         ai_mcp_return_value_set_str(ret_val,
-            "Message sent via Feishu (OpenClaw WS not connected, no @mention specified)");
+            "Message sent via Feishu (OpenClaw WS not connected, no @mention resolved)");
     }
     return OPRT_OK;
 }
