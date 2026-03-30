@@ -206,7 +206,7 @@ static OPERATE_RET __tool_get_current_time(const MCP_PROPERTY_LIST_T *properties
     /* Pass 0 so tal_time_get_local_time_custom uses current time internally */
     __to_local_tm(0, &tm_local, tz_label, sizeof(tz_label));
 
-    char result[256];
+    char result[512];
     snprintf(result, sizeof(result),
              "Current time: %04d-%02d-%02d %02d:%02d:%02d %s (UTC epoch=%lld). "
              "To schedule a reminder, call cron_add with the desired "
