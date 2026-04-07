@@ -117,7 +117,9 @@ int reset_netconfig_check(void)
     tal_event_subscribe(EVENT_RESET, "reset_netconfig", __reset_netconfig_clear, SUBSCRIBE_TYPE_NORMAL);
 
     PR_DEBUG("Reset ctrl data!");
-    weixin_kv_clear();
+    if (strcmp(IM_SECRET_CHANNEL_MODE, "weixin") == 0) {
+        weixin_kv_clear();
+    }
     tuya_iot_reset(tuya_iot_client_get());
 
     return rt;

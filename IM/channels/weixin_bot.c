@@ -39,6 +39,10 @@ static const char *TAG = "weixin";
 #define WX_QR_URL_SIZE          512
 
 #define WX_SESSION_EXPIRED_CODE (-14)
+#define WX_MSG_TYPE_TEXT        1
+#define WX_MSG_TYPE_VOICE       3
+#define WX_MSG_TYPE_BOT         2
+#define WX_MSG_STATE_FINISH     2
 
 /* ---------------------------------------------------------------------------
  * File scope variables
@@ -58,8 +62,8 @@ static size_t        s_wx_cacert_len         = 0;
 static bool          s_wx_tls_no_verify      = false;
 static char          s_wx_cert_host[128]     = {0};
 
-static bool          s_session_paused        = false;
-static uint32_t      s_session_pause_start   = 0;
+static volatile bool     s_session_paused      = false;
+static volatile uint32_t s_session_pause_start = 0;
 
 static uint32_t      s_fail_delay_ms         = IM_WX_FAIL_BASE_MS;
 
@@ -87,7 +91,7 @@ static void weixin_make_uin(char *out, size_t out_size)
     size_t   dec_len;
     size_t   b64_len = 0;
 
-    snprintf(dec, sizeof(dec), "%lu", val);
+    snprintf(dec, sizeof(dec), "%" PRIu32, val);
     dec_len = strlen(dec);
     mbedtls_base64_encode((uint8_t *)out, out_size, &b64_len,
                           (const uint8_t *)dec, dec_len);
@@ -434,7 +438,7 @@ static void extract_text_body(cJSON *item_list, char *out, size_t out_size)
     cJSON_ArrayForEach(item, item_list) {
         int type = im_json_int(item, "type", 0);
 
-        if (type == 1) { /* TEXT */
+        if (type == WX_MSG_TYPE_TEXT) {
             cJSON *text_item = cJSON_GetObjectItem(item, "text_item");
             cJSON *text      = text_item ? cJSON_GetObjectItem(text_item, "text") : NULL;
             if (cJSON_IsString(text) && text->valuestring && text->valuestring[0] != '\0') {
@@ -443,7 +447,7 @@ static void extract_text_body(cJSON *item_list, char *out, size_t out_size)
             }
         }
 
-        if (type == 3) { /* VOICE — use STT text if available */
+        if (type == WX_MSG_TYPE_VOICE) {
             cJSON *voice_item = cJSON_GetObjectItem(item, "voice_item");
             cJSON *stt        = voice_item ? cJSON_GetObjectItem(voice_item, "text") : NULL;
             if (cJSON_IsString(stt) && stt->valuestring && stt->valuestring[0] != '\0') {
@@ -457,14 +461,12 @@ static void extract_text_body(cJSON *item_list, char *out, size_t out_size)
 /**
  * @brief Process parsed getupdates response: push each valid message to the bus.
  *
- * @param[in] resp_str  Raw JSON string from getupdates
+ * @param[in] root  Parsed getupdates JSON root object
  * @return none
  */
-static void process_updates(const char *resp_str)
+static void process_updates(cJSON *root)
 {
-    cJSON *root = cJSON_Parse(resp_str);
-    if (!root) {
-        IM_LOGW(TAG, "process_updates: JSON parse failed");
+    if (!root || !cJSON_IsObject(root)) {
         return;
     }
 
@@ -530,8 +532,6 @@ static void process_updates(const char *resp_str)
             im_free(bus_msg.content);
         }
     }
-
-    cJSON_Delete(root);
 }
 
 /* ---------------------------------------------------------------------------
@@ -602,13 +602,10 @@ static void weixin_poll_task(void *arg)
             continue;
         }
 
-        /* Parse ret / errcode */
+        /* Parse once and reuse the same JSON tree for status checks and updates. */
         cJSON *root    = cJSON_Parse(resp);
         int    api_ret = root ? im_json_int(root, "ret", 0)     : -1;
         int    errcode = root ? im_json_int(root, "errcode", 0) : -1;
-        if (root) {
-            cJSON_Delete(root);
-        }
 
         if (api_ret != 0 || errcode != 0) {
             if (errcode == WX_SESSION_EXPIRED_CODE || api_ret == WX_SESSION_EXPIRED_CODE) {
@@ -622,14 +619,16 @@ static void weixin_poll_task(void *arg)
                     s_fail_delay_ms = (next > IM_WX_FAIL_MAX_MS) ? IM_WX_FAIL_MAX_MS : next;
                 }
             }
+            if (root) {
+                cJSON_Delete(root);
+            }
             continue;
         }
 
         s_fail_delay_ms = IM_WX_FAIL_BASE_MS;
-        process_updates(resp);
+        process_updates(root);
+        cJSON_Delete(root);
     }
-
-    im_free(resp);
 }
 
 /* ---------------------------------------------------------------------------
@@ -705,6 +704,7 @@ static void weixin_qr_login_task(void *arg)
         int      refresh_count  = 0;
         bool     scanned        = false;
 
+        /* Unsigned wrap-safe timeout check: still true until now reaches login_deadline. */
         while ((uint32_t)(tal_system_get_millisecond() - login_deadline + IM_WX_LOGIN_TIMEOUT_MS)
                < IM_WX_LOGIN_TIMEOUT_MS) {
 
@@ -993,10 +993,12 @@ OPERATE_RET weixin_send_message(const char *user_id, const char *text)
     }
 
     /* Generate client_id */
-    char client_id[64] = {0};
-    snprintf(client_id, sizeof(client_id), "wx-%016llx-%04x",
-         tal_system_get_millisecond(),
-         (unsigned int)(rand() % 0xFFFF));
+    char     client_id[64] = {0};
+    uint64_t now_ms        = (uint64_t)tal_system_get_millisecond();
+
+    snprintf(client_id, sizeof(client_id), "wx-%016" PRIx64 "-%04x",
+             now_ms,
+             (unsigned int)(tal_system_get_random(0xFFFF)));
 
     /* Build item_list */
     cJSON *root    = cJSON_CreateObject();
@@ -1004,14 +1006,14 @@ OPERATE_RET weixin_send_message(const char *user_id, const char *text)
     cJSON_AddStringToObject(msg_obj, "from_user_id",  "");
     cJSON_AddStringToObject(msg_obj, "to_user_id",    user_id);
     cJSON_AddStringToObject(msg_obj, "client_id",     client_id);
-    cJSON_AddNumberToObject(msg_obj, "message_type",  2); /* BOT */
-    cJSON_AddNumberToObject(msg_obj, "message_state", 2); /* FINISH */
+    cJSON_AddNumberToObject(msg_obj, "message_type",  WX_MSG_TYPE_BOT);
+    cJSON_AddNumberToObject(msg_obj, "message_state", WX_MSG_STATE_FINISH);
     if (s_context_token[0] != '\0') {
         cJSON_AddStringToObject(msg_obj, "context_token", s_context_token);
     }
     cJSON *item_list = cJSON_AddArrayToObject(msg_obj, "item_list");
     cJSON *item      = cJSON_CreateObject();
-    cJSON_AddNumberToObject(item, "type", 1); /* TEXT */
+    cJSON_AddNumberToObject(item, "type", WX_MSG_TYPE_TEXT);
     cJSON *text_item = cJSON_AddObjectToObject(item, "text_item");
     cJSON_AddStringToObject(text_item, "text", text);
     cJSON_AddItemToArray(item_list, item);
