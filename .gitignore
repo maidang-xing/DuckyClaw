@@ -2,6 +2,8 @@
 dist
 .build
 .cache
+.cursor
+.claude
 compile_commands.json
 tuya_app_config_secrets.h
 

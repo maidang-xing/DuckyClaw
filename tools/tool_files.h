@@ -76,31 +76,41 @@ extern "C" {
 #define claw_fread     tkl_fread
 #define claw_fwrite    tkl_fwrite
 #define claw_fgets     tkl_fgets
+#define claw_fsync(file) tkl_fsync(tkl_fileno(file))
+#define claw_feof      tkl_feof
 #define claw_fgetsize  tkl_fgetsize
 #define claw_dir_open  tkl_dir_open
 #define claw_dir_close tkl_dir_close
 #define claw_dir_read  tkl_dir_read
 #define claw_dir_name  tkl_dir_name
-#define claw_fs_mkdir       tkl_fs_mkdir
-#define claw_fs_mount       tkl_fs_mount
-#define claw_fs_remove      tkl_fs_remove
-#define claw_fs_is_exist    tkl_fs_is_exist
-#define claw_dir_is_regular tkl_dir_is_regular
+#define claw_dir_is_directory tkl_dir_is_directory
+#define claw_dir_is_regular   tkl_dir_is_regular
+#define claw_fs_mkdir         tkl_fs_mkdir
+#define claw_fs_mount         tkl_fs_mount
+#define claw_fs_remove        tkl_fs_remove
+#define claw_fs_is_exist      tkl_fs_is_exist
+#define claw_fs_mode          tkl_fs_mode
+#define claw_fs_rename        tkl_fs_rename
 #else
 #define claw_fopen          tal_fopen
 #define claw_fclose         tal_fclose
 #define claw_fread          tal_fread
 #define claw_fwrite         tal_fwrite
 #define claw_fgets          tal_fgets
+#define claw_fsync          tal_fsync
+#define claw_feof           tal_feof
 #define claw_fgetsize       tal_fgetsize
 #define claw_dir_open       tal_dir_open
 #define claw_dir_close      tal_dir_close
 #define claw_dir_read       tal_dir_read
 #define claw_dir_name       tal_dir_name
-#define claw_fs_mkdir       tal_fs_mkdir
-#define claw_fs_remove      tal_fs_remove
-#define claw_fs_is_exist    tal_fs_is_exist
-#define claw_dir_is_regular tal_dir_is_regular
+#define claw_dir_is_directory tal_dir_is_directory
+#define claw_dir_is_regular   tal_dir_is_regular
+#define claw_fs_mkdir         tal_fs_mkdir
+#define claw_fs_remove        tal_fs_remove
+#define claw_fs_is_exist      tal_fs_is_exist
+#define claw_fs_mode          tal_fs_mode
+#define claw_fs_rename        tal_fs_rename
 #endif
 
 #if defined(ENABLE_EXT_RAM) && (ENABLE_EXT_RAM == 1)

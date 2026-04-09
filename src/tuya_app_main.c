@@ -50,7 +50,6 @@
 #include "ducky_claw_chat.h"
 #include "reset_netcfg.h"
 #include "app_im.h"
-#include "cli/serial_cli.h"
 #include "tools_register.h"
 #include "ws_server.h"
 #include "acp_client.h"
@@ -344,9 +343,7 @@ void user_main(void)
 #if !defined(PLATFORM_ESP32)
     tal_cli_init();
     tuya_app_cli_init();
-    serial_cli_init();
 #endif
-    tuya_authorize_init();
 
     reset_netconfig_start();
 
