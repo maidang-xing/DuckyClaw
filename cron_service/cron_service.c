@@ -358,14 +358,24 @@ static void cron_process_due_jobs(void)
 
         /* Case 3: Reached reminder time → remind user, then delete/reschedule */
         PR_INFO("Cron firing: '%s' (%s)", job->name, job->id);
-        im_msg_t im = {0};
-        strncpy(im.channel, "cron", sizeof(im.channel) - 1);
-        im.content = claw_malloc(strlen(job->message) + 1);
-        if (im.content) {
-            strncpy(im.content, job->message, strlen(job->message) + 1);
-            (void)message_bus_push_inbound(&im);
-        } else {
-            PR_ERR("cron: malloc failed for job '%s'", job->name);
+        {
+            /* Wrap the raw message with a [Cron Reminder] frame so the AI
+             * knows this is a scheduled reminder to relay, not a user message. */
+            const char *fmt =
+                "[Cron Reminder] The following scheduled reminder just fired "
+                "(job '%s', id=%s). Deliver this message to the user in a "
+                "warm, friendly reminder tone:\n%s";
+            size_t needed = strlen(fmt) + strlen(job->name) +
+                            strlen(job->id) + strlen(job->message) + 1;
+            im_msg_t im = {0};
+            strncpy(im.channel, "cron", sizeof(im.channel) - 1);
+            im.content = claw_malloc(needed);
+            if (im.content) {
+                snprintf(im.content, needed, fmt, job->name, job->id, job->message);
+                (void)message_bus_push_inbound(&im);
+            } else {
+                PR_ERR("cron: malloc failed for job '%s'", job->name);
+            }
         }
         job->last_run = now;
 

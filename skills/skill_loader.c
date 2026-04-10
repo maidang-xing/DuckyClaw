@@ -144,7 +144,7 @@ static const builtin_skill_t s_builtins[] = {
     {"weather",           BUILTIN_WEATHER           },
     {"daily-briefing",    BUILTIN_DAILY_BRIEFING    },
     {"skill-creator",     BUILTIN_SKILL_CREATOR     },
-    {"watch-for-visitor", BUILTIN_WATCH_FOR_VISITOR },
+    // {"watch-for-visitor", BUILTIN_WATCH_FOR_VISITOR },
 };
 
 #define NUM_BUILTINS ((int)(sizeof(s_builtins) / sizeof(s_builtins[0])))

@@ -90,55 +90,29 @@
                      "you MUST actually invoke the tool. Do NOT say \"done\" or describe a result "
                      "without a real tool call.\n"
                      "3. NEVER invent data you haven't retrieved via a tool "
-                     "(e.g. task lists, file contents, time, search results).\n\n");
+                     "(e.g. task lists, file contents, time, search results).\n"
+                     "4. ALWAYS reply in the same language the user is using. "
+                     "If the user writes in Chinese, reply in Chinese. "
+                     "If in English, reply in English.\n"
+                     "5. When you receive a [Cron Reminder] message, it is a scheduled reminder "
+                     "to relay to the user. Deliver it in a warm, friendly reminder tone. "
+                     "Do NOT treat it as a conversation from the user.\n\n");
  
      off += snprintf(buf + off, size - off,
                      "## Available Tools\n"
-                     "Below is the COMPLETE list of tools you can call. "
-                     "You have NO other capabilities beyond these tools and conversation.\n\n");
- 
-     off += snprintf(buf + off, size - off,
-                     "- web_search: Search the web. "
-                     "Use for up-to-date facts, news, weather, or anything beyond your training data.\n");
- 
-     off += snprintf(buf + off, size - off,
-                     "- get_current_time: Get the current date and time. "
-                     "You do NOT have an internal clock. ALWAYS call this tool when you need the time or date.\n");
- 
- #if CLAW_FS_ROOT_PATH_EMPTY
-     off += snprintf(buf + off, size - off,
-                     "- read_file: Read a file (path must start with \"/\").\n"
-                     "- write_file: Write/overwrite a file.\n"
-                     "- edit_file: Find-and-replace edit a file.\n"
-                     "- list_dir: List files, optionally filter by prefix.\n"
-                     "- find_path: Search for a file/directory by name (fuzzy match).\n");
- #else
-     off += snprintf(buf + off, size - off,
-                     "- read_file: Read a file (path must start with " CLAW_FS_ROOT_PATH "/).\n"
-                     "- write_file: Write/overwrite a file on " CLAW_FS_ROOT_PATH ".\n"
-                     "- edit_file: Find-and-replace edit a file on " CLAW_FS_ROOT_PATH ".\n"
-                     "- list_dir: List files on " CLAW_FS_ROOT_PATH ".\n"
-                     "- find_path: Search for a file/directory by name under " CLAW_FS_ROOT_PATH " (fuzzy match).\n");
- #endif
- 
-    off += snprintf(buf + off, size - off,
-                    "- cron_add: Schedule a recurring or one-shot reminder. "
-                    "For relative delays like 'in 5 minutes': first call get_current_time, "
-                    "then compute the next absolute local time, then call cron_add with "
-                    "year/month/day/hour/minute/second. cron_add converts that local time "
-                    "to the final timestamp internally.\n"
-                    "- cron_list: List all scheduled cron jobs. "
-                    "MUST call this tool when the user asks about tasks/reminders.\n"
-                    "- cron_remove: Remove a scheduled cron job by ID.\n\n");
-
-    off += snprintf(buf + off, size - off,
-                    "## When to Use Tools (mandatory)\n"
-                    "- Setting a reminder at a specific clock time -> get_current_time if needed for today's date, then cron_add with absolute year/month/day/hour/minute\n"
-                    "- Setting a relative reminder like 'in 5 minutes' -> get_current_time, compute the next absolute local time, then cron_add\n"
-                    "- Listing/removing reminders -> cron_list / cron_remove\n"
-                    "- Reading/writing/finding files -> read_file / write_file / find_path / list_dir\n"
-                    "- Asking current time or date -> get_current_time\n"
-                    "- Searching the web -> web_search\n\n");
+                     "Your tools are registered via the tool-calling interface. "
+                     "Use them as described in their schemas.\n"
+                     "Key usage notes:\n"
+                     "- You do NOT have an internal clock. ALWAYS call get_current_time "
+                     "when you need the time or date.\n"
+                     "- For relative reminders ('in 5 minutes'): call get_current_time first, "
+                     "compute absolute time, then cron_add with year/month/day/hour/minute/second.\n"
+                     "- MUST call cron_list when the user asks about tasks/reminders.\n"
+#if CLAW_FS_ROOT_PATH_EMPTY
+                     "- File paths must start with \"/\".\n\n");
+#else
+                     "- File paths must start with " CLAW_FS_ROOT_PATH "/.\n\n");
+#endif
  
      off += snprintf(buf + off, size - off,
                      "## Memory\n"
@@ -152,7 +126,8 @@
      off += snprintf(buf + off, size - off,
                      "## Skills\n"
                      "Skills are specialized instruction files stored in /skills/.\n"
-                     "When a task matches a skill, read the full skill file for detailed instructions.\n"
+                     "When the user's request matches a skill listed below, you MUST load it "
+                     "with read_file before responding. Do not attempt the task from memory alone.\n"
                      "You can create new skills using write_file to /skills/<name>.md.\n");
  
      // Personality
