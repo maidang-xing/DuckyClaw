@@ -14,10 +14,6 @@
  *        (tool result already recorded in history by __on_tool_executed)
  *     5. If no tool called → final response, forward to IM, break
  *
- * The semaphore (s_turn.sem) is posted by agent_loop_notify_turn_done(),
- * which is called from ducky_claw_chat.c on AI_USER_EVT_TEXT_STREAM_STOP.
- * The tool hook (__on_tool_executed) sets s_turn.tool_called = true and
- * records the result string in s_turn.tool_result[] for the next iteration.
  *
  * @version 0.4
  * @copyright Copyright (c) 2021-2026 Tuya Inc. All Rights Reserved.
@@ -68,7 +64,7 @@
 /* Buffer size for a single tool result string.
  * Must be large enough to hold the full cron_list / read_file output.
  * 2 KB covers ~10 cron jobs with full field text. */
-#define TOOL_RESULT_BUF_SIZE  (512)
+#define TOOL_RESULT_BUF_SIZE  (2048)
 
 /* Buffer holding the last complete AI text stream, set by
  * agent_loop_set_last_response() called from ducky_claw_chat.c on STREAM_STOP.
@@ -93,8 +89,8 @@ static const char *__json_get_string(const cJSON *item)
  */
 typedef struct {
     SEM_HANDLE   sem;           /* Posted when cloud AI finishes one round  */
-    MUTEX_HANDLE lock;          /* Guards tool_called / tool_result         */
-    bool         tool_called;   /* Set by __on_tool_executed                */
+    MUTEX_HANDLE lock;          /* Guards tool_call_success / tool_result         */
+    bool         tool_call_success;   /* Set by __on_tool_executed                */
     char         tool_result[TOOL_RESULT_BUF_SIZE]; /* Last tool summary    */
 } turn_state_t;
 
@@ -224,7 +220,7 @@ static void __on_tool_executed(const char *tool_name, OPERATE_RET rt,
     /* Signal the inner loop that a tool was called this round */
     if (s_turn.lock) {
         tal_mutex_lock(s_turn.lock);
-        s_turn.tool_called = true;
+        s_turn.tool_call_success = rt == OPRT_OK ? true : false;
         strncpy(s_turn.tool_result, buf, TOOL_RESULT_BUF_SIZE - 1);
         s_turn.tool_result[TOOL_RESULT_BUF_SIZE - 1] = '\0';
         tal_mutex_unlock(s_turn.lock);
@@ -354,8 +350,9 @@ static void __build_and_send(const char *content, bool is_tool, bool summarize)
         header = "\n\n# Maximum Iterations Reached\n"
                  "You have reached the tool-call limit for this turn. "
                  "Do NOT call any more tools. "
-                 "Instead, summarise in Chinese what you have accomplished so far, "
+                 "Instead, summarise what you have accomplished so far, "
                  "what succeeded, what failed, and any next steps the user should take. "
+                 "Reply in the same language the user used. "
                  "Last tool result:\n";
     } else if (is_tool) {
         header = "\n\n# Tool Execution Result\n"
@@ -386,7 +383,7 @@ static void __build_and_send(const char *content, bool is_tool, bool summarize)
  *
  * Mirrors mimiclaw's agent_loop_task structure:
  *   outer: pop inbound message
- *   inner: send → wait → check tool_called → repeat or finish
+ *   inner: send → wait → check tool_call_success → repeat or finish
  */
 static void agent_loop_task(void *arg)
 {
@@ -458,7 +455,7 @@ static void agent_loop_task(void *arg)
             /* Reset per-round tool state */
             if (s_turn.lock) {
                 tal_mutex_lock(s_turn.lock);
-                s_turn.tool_called = false;
+                s_turn.tool_call_success = false;
                 s_turn.tool_result[0] = '\0';
                 tal_mutex_unlock(s_turn.lock);
             }
@@ -490,20 +487,15 @@ static void agent_loop_task(void *arg)
             char result_copy[TOOL_RESULT_BUF_SIZE];
             if (s_turn.lock) {
                 tal_mutex_lock(s_turn.lock);
-                called = s_turn.tool_called;
+                called = s_turn.tool_call_success;
                 strncpy(result_copy, s_turn.tool_result, TOOL_RESULT_BUF_SIZE - 1);
                 result_copy[TOOL_RESULT_BUF_SIZE - 1] = '\0';
                 tal_mutex_unlock(s_turn.lock);
             }
 
-            PR_INFO("LLM iteration=%d tool_called=%d is_last=%d", iteration + 1, called, is_last);
+            PR_INFO("LLM iteration=%d tool_call_success=%d is_last=%d", iteration + 1, called, is_last);
 
-            if (!called || is_last) {
-                /* No tool call (or forced summary round) → route final response */
-                // PR_INFO("Routing final response target=%s chat_id=%s (no_tool=%d is_last=%d)",
-                //         app_im_get_channel() ? app_im_get_channel() : "(null)",
-                //         app_im_get_chat_id() ? app_im_get_chat_id() : "(null)",
-                //         !called, is_last);
+            if (called || is_last) {
                 if (s_last_response && s_last_response_lock) {
                     tal_mutex_lock(s_last_response_lock);
                     if (s_last_response[0] != '\0') {

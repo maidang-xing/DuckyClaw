@@ -629,11 +629,16 @@ OPERATE_RET tool_files_fs_init(void)
     /* Create default config files */
     TUYA_CALL_ERR_LOG(
         __create_default_file(USER_FILE,
-                              "# User Config\n"));
+                              "# User Config\n\n"
+                              "(No user profile configured yet. Learn about the user through conversations\n"
+                              "and update this file using edit_file to personalize future interactions.)\n"));
 
     TUYA_CALL_ERR_LOG(
         __create_default_file(SOUL_FILE,
-                              "# Soul Config\n"));
+                              "# Soul Config\n\n"
+                              "You are a warm, helpful AI assistant. You speak naturally and concisely.\n"
+                              "When delivering reminders, use a gentle and friendly tone.\n"
+                              "Adapt your communication style to match the user's language preference.\n"));
 
     PR_DEBUG("Filesystem initialized, root: %s", CLAW_FS_ROOT_PATH);
     return OPRT_OK;
