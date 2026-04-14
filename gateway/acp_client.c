@@ -33,7 +33,7 @@
 #include "tuya_app_config.h"
 #include "app_base_config.h"
 #include "app_im.h"
-#include "bus/message_bus.h"
+#include "sys_bus.h"
 
 #include "cJSON.h"
 #include "mix_method.h"
@@ -889,7 +889,7 @@ static OPERATE_RET __acp_push_notice_to_bus(const char *content, const char *tag
     char chat_id[sizeof(s_ctx.pending_chat_id)] = {0};
     size_t content_len;
     char *owned_content;
-    im_msg_t in = {0};
+    sys_msg_t in = {0};
 
     if (!content || content[0] == '\0') {
         return OPRT_INVALID_PARM;
@@ -921,7 +921,7 @@ static OPERATE_RET __acp_push_notice_to_bus(const char *content, const char *tag
     in.chat_id[sizeof(in.chat_id) - 1] = '\0';
     in.content = owned_content;
 
-    OPERATE_RET rt = message_bus_push_inbound(&in);
+    OPERATE_RET rt = sys_bus_push_inbound(&in);
     if (rt != OPRT_OK) {
         PR_ERR("acp %s inject failed channel=%s chat_id=%s rt=%d",
                tag ? tag : "notice", channel, chat_id, rt);
@@ -929,7 +929,7 @@ static OPERATE_RET __acp_push_notice_to_bus(const char *content, const char *tag
         return rt;
     }
 
-    PR_INFO("acp %s queued to message_bus channel=%s chat_id=%s",
+    PR_INFO("acp %s queued to sys_bus channel=%s chat_id=%s",
             tag ? tag : "notice", channel, chat_id);
     return OPRT_OK;
 }
@@ -1577,8 +1577,8 @@ OPERATE_RET __acp_client_init_evt_cb(void *data)
     acp_load_config();
 
     if (s_gw_token[0] == '\0' || s_device_id[0] == '\0' || s_gw_host[0] == '\0') {
-        PR_ERR("acp gateway token is empty");
-        return OPRT_INVALID_PARM;
+        PR_WARN("acp_client: gateway config incomplete (token/device_id/host empty), skip initialization");
+        return OPRT_OK;
     }
 
     OPERATE_RET rt = tal_mutex_create_init(&s_ctx.tx_mutex);

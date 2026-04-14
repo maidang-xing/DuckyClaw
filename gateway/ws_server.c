@@ -14,7 +14,7 @@
 #include "ws_server.h"
 #include "tuya_app_config.h"
 #include "tool_files.h"
-#include "bus/message_bus.h"
+#include "sys_bus.h"
 #include "cJSON.h"
 #include "mix_method.h"
 #include "tal_hash.h"
@@ -517,13 +517,13 @@ static void ws_handle_text_message_locked(ws_client_t *client,
     memcpy(cbuf, content->valuestring, clen);
     cbuf[clen] = '\0';
 
-    im_msg_t msg = {0};
-    snprintf(msg.channel, sizeof(msg.channel), "%s", IM_CHAN_WS);
+    sys_msg_t msg = {0};
+    snprintf(msg.channel, sizeof(msg.channel), "%s", SYS_CHAN_WS);
     snprintf(msg.chat_id, sizeof(msg.chat_id), "%s", client->chat_id);
     msg.content = cbuf;
 
-    if (message_bus_push_inbound(&msg) != OPRT_OK) {
-        PR_ERR("ws: message_bus_push_inbound failed");
+    if (sys_bus_push_inbound(&msg) != OPRT_OK) {
+        PR_ERR("ws: sys_bus_push_inbound failed");
         claw_free(cbuf);
     }
 
@@ -789,6 +789,12 @@ OPERATE_RET ws_server_start(void)
     }
 
     ws_load_auth_token();
+
+    if (s_ws_token[0] == '\0') {
+        PR_WARN("ws_server: token is empty, skip initialization");
+        return OPRT_OK;
+    }
+
     ws_clients_init();
 
     s_listen_fd = tal_net_socket_create(PROTOCOL_TCP);

@@ -15,7 +15,7 @@
 #include "acp_client.h"
 
 #include "app_im.h"
-#include "im_api.h"
+#include "sys_bus.h"
 #include "tal_log.h"
 
 #if defined(ENABLE_WIFI) && (ENABLE_WIFI == 1)
@@ -179,8 +179,6 @@ static void __ai_chat_handle_event(AI_NOTIFY_EVENT_T *event)
     case AI_USER_EVT_ASR_OK: {
         /* Restore TTS and UI output for this iteration. */
 #if 0
-        // ai_agent_set_tts_suppressed(FALSE);
-        // ai_chat_ui_set_output_suppressed(FALSE);
         AI_NOTIFY_TEXT_T *asr = (AI_NOTIFY_TEXT_T *)event->data;
         if (!asr || asr->datalen == 0 || !asr->data) {
             break;
@@ -191,21 +189,13 @@ static void __ai_chat_handle_event(AI_NOTIFY_EVENT_T *event)
             asr_text[asr->datalen] = '\0';
             PR_DEBUG("[acp] asr inbound: %.64s", asr_text);
 
-            im_msg_t msg = {0};
-            const char *channel = app_im_get_channel();
-            const char *chat_id = app_im_get_chat_id();
-            if (channel && channel[0] != '\0') {
-                strncpy(msg.channel, channel, sizeof(msg.channel) - 1);
-                msg.channel[sizeof(msg.channel) - 1] = '\0';
-            }
-            if (chat_id && chat_id[0] != '\0') {
-                strncpy(msg.chat_id, chat_id, sizeof(msg.chat_id) - 1);
-                msg.chat_id[sizeof(msg.chat_id) - 1] = '\0';
-            }
+            sys_msg_t msg = {0};
+            strncpy(msg.channel, SYS_CHAN_ACP, sizeof(msg.channel) - 1);
+            msg.channel[sizeof(msg.channel) - 1] = '\0';
             PR_DEBUG("asr inbound: channel=%s chat_id=%s", msg.channel, msg.chat_id);
             msg.content = asr_text;
-            if (message_bus_push_inbound(&msg) != OPRT_OK) {
-                PR_ERR("message_bus_push_inbound failed");
+            if (sys_bus_push_inbound(&msg) != OPRT_OK) {
+                PR_ERR("sys_bus_push_inbound failed");
                 tal_free(asr_text);
             }
         }

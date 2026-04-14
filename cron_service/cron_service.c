@@ -8,7 +8,7 @@
  *
  * Implements a cron-like scheduler that supports recurring ("every") and
  * one-shot ("at") jobs. Jobs are persisted to a JSON file on the filesystem.
- * When a job fires, it injects a message via message_bus_push_inbound so the
+ * When a job fires, it injects a message via sys_bus_push_inbound so the
  * agent_loop handles the full AI interaction and forwards the reply to IM.
  */
 
@@ -17,7 +17,7 @@
 
 #include "tal_api.h"
 #include "tal_time_service.h"
-#include "bus/message_bus.h"
+#include "sys_bus.h"
 #include "cJSON.h"
 
 #include <string.h>
@@ -345,10 +345,10 @@ static void cron_process_due_jobs(void)
                          job->name, job->id, (long long)job->at_epoch,
                          (long long)late_secs, job->id);
                 PR_INFO("Cron overdue msg: %s", msg);
-                im_msg_t im = {0};
-                strncpy(im.channel, "cron", sizeof(im.channel) - 1);
+                sys_msg_t im = {0};
+                strncpy(im.channel, SYS_CHAN_CRON, sizeof(im.channel) - 1);
                 im.content = msg;
-                (void)message_bus_push_inbound(&im);
+                (void)sys_bus_push_inbound(&im);
                 /* Disable so it is not reported again on the next check */
                 job->enabled = false;
                 changed = true;
@@ -367,12 +367,12 @@ static void cron_process_due_jobs(void)
                 "warm, friendly reminder tone:\n%s";
             size_t needed = strlen(fmt) + strlen(job->name) +
                             strlen(job->id) + strlen(job->message) + 1;
-            im_msg_t im = {0};
-            strncpy(im.channel, "cron", sizeof(im.channel) - 1);
+            sys_msg_t im = {0};
+            strncpy(im.channel, SYS_CHAN_CRON, sizeof(im.channel) - 1);
             im.content = claw_malloc(needed);
             if (im.content) {
                 snprintf(im.content, needed, fmt, job->name, job->id, job->message);
-                (void)message_bus_push_inbound(&im);
+                (void)sys_bus_push_inbound(&im);
             } else {
                 PR_ERR("cron: malloc failed for job '%s'", job->name);
             }

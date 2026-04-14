@@ -29,7 +29,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "im_api.h"
+#include "sys_bus.h"
 #include "app_im.h"
 #include "ai_agent.h"
 #include "ai_chat_main.h"
@@ -393,8 +393,8 @@ static void agent_loop_task(void *arg)
     while (1) {
         tal_system_sleep(50);
         // PR_INFO("Device Free heap %d", tal_system_get_free_heap_size());
-        im_msg_t in = {0};
-        if (message_bus_pop_inbound(&in, UINT32_MAX) != OPRT_OK) {
+        sys_msg_t in = {0};
+        if (sys_bus_pop_inbound(&in, UINT32_MAX) != OPRT_OK) {
             continue;
         }
         if (!in.content || !s_total_prompt) {
@@ -546,14 +546,14 @@ int agent_loop_start_cb(void *data)
 
     #define GREETING_MESSAGE "Wake up, my friend!(This is a greeting message, reply within 10 characters.)"
 
-    im_msg_t in = {0};
-    strncpy(in.channel, "system", sizeof(in.channel) - 1);
+    sys_msg_t in = {0};
+    strncpy(in.channel, SYS_CHAN_SYSTEM, sizeof(in.channel) - 1);
     in.content = claw_malloc(strlen(GREETING_MESSAGE) + 1);
     if (!in.content) {
         return OPRT_MALLOC_FAILED;
     }
     strncpy(in.content, GREETING_MESSAGE, strlen(GREETING_MESSAGE) + 1);
-    message_bus_push_inbound(&in);
+    sys_bus_push_inbound(&in);
 
     return 0;
 }

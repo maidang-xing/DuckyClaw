@@ -50,6 +50,7 @@
 #include "ducky_claw_chat.h"
 #include "reset_netcfg.h"
 #include "app_im.h"
+#include "sys_bus.h"
 #include "tools_register.h"
 #include "ws_server.h"
 #include "acp_client.h"
@@ -391,6 +392,11 @@ void user_main(void)
     ret = board_register_hardware();
     if (ret != OPRT_OK) {
         PR_ERR("board_register_hardware failed rt:%d", ret);
+    }
+
+    ret = sys_bus_init();
+    if (ret != OPRT_OK) {
+        PR_ERR("sys_bus_init failed rt:%d", ret);
     }
 
     ret = ducky_claw_chat_init();
