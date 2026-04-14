@@ -16,7 +16,7 @@
 #include "tool_files.h"
 
 #include "tal_api.h"
-#include "bus/message_bus.h"
+#include "sys_bus.h"
 
 #include <ctype.h>
 #include <string.h>
@@ -109,8 +109,8 @@ static bool heartbeat_send(void)
         return false;
     }
 
-    im_msg_t im = {0};
-    strncpy(im.channel, "heartbeat", sizeof(im.channel) - 1);
+    sys_msg_t im = {0};
+    strncpy(im.channel, SYS_CHAN_HEARTBEAT, sizeof(im.channel) - 1);
     im.content = claw_malloc(strlen(HEARTBEAT_PROMPT) + 1);
     if (!im.content) {
         PR_ERR("heartbeat: malloc failed");
@@ -118,7 +118,7 @@ static bool heartbeat_send(void)
     }
     strcpy(im.content, HEARTBEAT_PROMPT);
 
-    OPERATE_RET rt = message_bus_push_inbound(&im);
+    OPERATE_RET rt = sys_bus_push_inbound(&im);
     if (rt != OPRT_OK) {
         PR_WARN("Send heartbeat message failed: %d", rt);
         return false;

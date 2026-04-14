@@ -35,7 +35,6 @@
 #include <string.h>
 
 extern void netmgr_cmd(int argc, char *argv[]);
-extern void tal_kv_cmd(int argc, char *argv[]);
 extern void tal_thread_dump_watermark(void);
 
 /* ---------------------------------------------------------------------------
@@ -48,6 +47,7 @@ extern void tal_thread_dump_watermark(void);
 #define CLI_DEFAULT_HEX_LIMIT     512
 #define CLI_UUID_LENGTH           20
 #define CLI_AUTHKEY_LENGTH        32
+#define CLI_FS_LS_MAX_DEPTH       3
 
 #if defined(CLAW_FS_ROOT_PATH_EMPTY) && (CLAW_FS_ROOT_PATH_EMPTY == 1)
 #define CLI_FS_DEFAULT_PATH       "/"
@@ -55,7 +55,9 @@ extern void tal_thread_dump_watermark(void);
 #define CLI_FS_DEFAULT_PATH       CLAW_FS_ROOT_PATH
 #endif
 
-#if !(defined(ENABLE_FILE_SYSTEM) && (ENABLE_FILE_SYSTEM == 1))
+#if defined(CLAW_USE_SDCARD) && (CLAW_USE_SDCARD == 1)
+#define CLI_FS_INFO_NEED_FREE     0
+#elif !(defined(ENABLE_FILE_SYSTEM) && (ENABLE_FILE_SYSTEM == 1))
 #define CLI_FS_INFO_NEED_FREE     1
 #else
 #define CLI_FS_INFO_NEED_FREE     0
@@ -122,6 +124,9 @@ static void cmd_cfg_set_fs_appsecret(int argc, char *argv[]);
 static void cmd_cfg_set_fs_allow(int argc, char *argv[]);
 static void cmd_cfg_set_proxy(int argc, char *argv[]);
 static void cmd_cfg_clear_proxy(int argc, char *argv[]);
+static void cli_clear_weixin_cfg_overrides_(void);
+static OPERATE_RET cli_fs_list_dir_recursive_(const char *path, int depth, int max_depth, uint32_t *count);
+static void cli_fs_build_tree_prefix_(int depth, char *out, size_t out_size);
 
 /* ---------------------------------------------------------------------------
  * Internal helpers
@@ -421,6 +426,7 @@ static void cli_clear_im_cfg_overrides_(void)
     (void)im_kv_del(IM_NVS_FS, IM_NVS_KEY_FS_APP_ID);
     (void)im_kv_del(IM_NVS_FS, IM_NVS_KEY_FS_APP_SECRET);
     (void)im_kv_del(IM_NVS_FS, IM_NVS_KEY_FS_ALLOW_FROM);
+    cli_clear_weixin_cfg_overrides_();
 
     (void)http_proxy_clear();
 }
@@ -710,6 +716,151 @@ static void cli_fs_join_path_(const char *dir, const char *name, char *out, size
 }
 
 /**
+ * @brief Clear all Weixin config KV overrides.
+ * @return none
+ */
+static void cli_clear_weixin_cfg_overrides_(void)
+{
+    static const char *const s_keys[] = {
+        IM_NVS_KEY_WX_TOKEN,
+        IM_NVS_KEY_WX_HOST,
+        IM_NVS_KEY_WX_ALLOW,
+        IM_NVS_KEY_WX_UPD_BUF,
+        IM_NVS_KEY_WX_CTX_TOK,
+    };
+
+    for (size_t i = 0; i < sizeof(s_keys) / sizeof(s_keys[0]); i++) {
+        (void)im_kv_del(IM_NVS_WX, s_keys[i]);
+    }
+}
+
+/**
+ * @brief Build an ASCII tree prefix for one directory depth.
+ * @param[in] depth current depth, first child level is 1
+ * @param[out] out output buffer
+ * @param[in] out_size output buffer size
+ * @return none
+ */
+static void cli_fs_build_tree_prefix_(int depth, char *out, size_t out_size)
+{
+    size_t offset = 0;
+
+    if (out == NULL || out_size == 0) {
+        return;
+    }
+
+    out[0] = '\0';
+    if (depth <= 0) {
+        return;
+    }
+
+    for (int i = 1; i < depth && offset + 3 < out_size; i++) {
+        int written = snprintf(out + offset, out_size - offset, "|  ");
+        if (written < 0 || (size_t)written >= out_size - offset) {
+            out[out_size - 1] = '\0';
+            return;
+        }
+        offset += (size_t)written;
+    }
+
+    if (offset + 4 < out_size) {
+        (void)snprintf(out + offset, out_size - offset, "|- ");
+    }
+}
+
+/**
+ * @brief Recursively list directory entries up to a fixed depth.
+ * @param[in] path directory path to scan
+ * @param[in] depth current recursion depth, starting from 1
+ * @param[in] max_depth maximum allowed recursion depth
+ * @param[out] count accumulated entry count
+ * @return OPRT_OK on success, error code on failure
+ */
+static OPERATE_RET cli_fs_list_dir_recursive_(const char *path, int depth, int max_depth, uint32_t *count)
+{
+    TUYA_DIR    dir = NULL;
+    OPERATE_RET rt;
+
+    if (path == NULL || count == NULL) {
+        return OPRT_INVALID_PARM;
+    }
+
+    rt = claw_dir_open(path, &dir);
+    if (rt != OPRT_OK || dir == NULL) {
+        return (rt == OPRT_OK) ? OPRT_DIR_OPEN_FAILED : rt;
+    }
+
+    while (1) {
+        TUYA_FILEINFO info                  = NULL;
+        const char   *name                  = NULL;
+        BOOL_T        is_dir                = FALSE;
+        BOOL_T        is_reg                = FALSE;
+        char          full_path[CLI_VALUE_SIZE] = {0};
+        char          tree_prefix[64]       = {0};
+        int           size                  = -1;
+        bool          recurse               = false;
+
+        rt = claw_dir_read(dir, &info);
+        if (rt == OPRT_EOD) {
+            rt = OPRT_OK;
+            break;
+        }
+        if (rt != OPRT_OK) {
+#if defined(CLAW_USE_SDCARD) && (CLAW_USE_SDCARD == 1)
+            rt = OPRT_OK;
+#endif
+            break;
+        }
+        if (info == NULL) {
+            rt = OPRT_OK;
+            break;
+        }
+
+        (void)claw_dir_name(info, &name);
+        if (name == NULL || name[0] == '\0' || strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
+#if CLI_FS_INFO_NEED_FREE
+            tal_free(info);
+#endif
+            continue;
+        }
+
+        (void)claw_dir_is_directory(info, &is_dir);
+        (void)claw_dir_is_regular(info, &is_reg);
+        cli_fs_join_path_(path, name, full_path, sizeof(full_path));
+        cli_fs_build_tree_prefix_(depth, tree_prefix, sizeof(tree_prefix));
+
+        if (is_reg == TRUE) {
+            size = claw_fgetsize(full_path);
+        }
+
+        if (is_dir == TRUE) {
+            cli_echof_("%s%s/", tree_prefix, name);
+            recurse = (depth < max_depth);
+        } else if (is_reg == TRUE) {
+            cli_echof_("%s%s (%d B)", tree_prefix, name, size);
+        } else {
+            cli_echof_("%s%s", tree_prefix, name);
+        }
+
+        (*count)++;
+
+#if CLI_FS_INFO_NEED_FREE
+        tal_free(info);
+#endif
+
+        if (recurse == true) {
+            OPERATE_RET sub_rt = cli_fs_list_dir_recursive_(full_path, depth + 1, max_depth, count);
+            if (sub_rt != OPRT_OK) {
+                cli_echof_("%*sERR: claw_dir_open('%s') rt=%d", depth * 2, "", full_path, sub_rt);
+            }
+        }
+    }
+
+    (void)claw_dir_close(dir);
+    return rt;
+}
+
+/**
  * @brief Implement fs_write and fs_append shared logic.
  * @param[in] path file path
  * @param[in] mode fopen mode
@@ -802,7 +953,7 @@ static void cmd_help(int argc, char *argv[])
     tal_cli_echo("");
 
     tal_cli_echo("[Filesystem]");
-    cli_echof_("  %-28s %s", "fs_ls [dir]", "List directory");
+    cli_echof_("  %-28s %s", "fs_ls [dir]", "List directory tree (depth <= 3)");
     cli_echof_("  %-28s %s", "fs_stat <path>", "Show exist/type/size/mode");
     cli_echof_("  %-28s %s", "fs_cat <file> [max_bytes]", "Print text file");
     cli_echof_("  %-28s %s", "fs_hexdump <file> [max_bytes]", "Hex dump file");
@@ -1241,62 +1392,16 @@ static void cmd_sys_wifi_scan(int argc, char *argv[])
 static void cmd_fs_ls(int argc, char *argv[])
 {
     const char *path = (argc >= 2) ? argv[1] : CLI_FS_DEFAULT_PATH;
-    TUYA_DIR    dir  = NULL;
     OPERATE_RET rt;
     uint32_t    count = 0;
-
-    rt = claw_dir_open(path, &dir);
-    if (rt != OPRT_OK || dir == NULL) {
+    cli_echof_("Listing: %s (max depth=%d)", path, CLI_FS_LS_MAX_DEPTH);
+    cli_echof_("%s/", path);
+    rt = cli_fs_list_dir_recursive_(path, 1, CLI_FS_LS_MAX_DEPTH, &count);
+    if (rt != OPRT_OK) {
         cli_echof_("ERR: claw_dir_open('%s') rt=%d", path, rt);
         return;
     }
 
-    cli_echof_("Listing: %s", path);
-    while (1) {
-        TUYA_FILEINFO info = NULL;
-        const char   *name = NULL;
-        BOOL_T        is_dir = FALSE;
-        BOOL_T        is_reg = FALSE;
-        char          full_path[CLI_VALUE_SIZE] = {0};
-        int           size;
-
-        rt = claw_dir_read(dir, &info);
-        if (rt == OPRT_EOD) {
-            break;
-        }
-        if (rt != OPRT_OK || info == NULL) {
-            cli_echof_("ERR: claw_dir_read rt=%d", rt);
-            break;
-        }
-
-        (void)claw_dir_name(info, &name);
-        if (name == NULL || name[0] == '\0' || strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
-#if CLI_FS_INFO_NEED_FREE
-            tal_free(info);
-#endif
-            continue;
-        }
-
-        (void)claw_dir_is_directory(info, &is_dir);
-        (void)claw_dir_is_regular(info, &is_reg);
-        cli_fs_join_path_(path, name, full_path, sizeof(full_path));
-        size = is_reg ? claw_fgetsize(full_path) : -1;
-
-        if (is_dir) {
-            cli_echof_("  <dir>  %s/", name);
-        } else if (is_reg) {
-            cli_echof_("  %6d  %s", size, name);
-        } else {
-            cli_echof_("  <unk>  %s", name);
-        }
-
-        count++;
-#if CLI_FS_INFO_NEED_FREE
-        tal_free(info);
-#endif
-    }
-
-    (void)claw_dir_close(dir);
     cli_echof_("Done. entries=%u", (unsigned)count);
 }
 
@@ -1659,15 +1764,64 @@ static void cmd_kv_del(int argc, char *argv[])
  */
 static void cmd_kv_list(int argc, char *argv[])
 {
-    static char kv_arg0[] = "kv";
-    static char kv_arg1[] = "list";
-    static char kv_arg2[] = "/";
-    char *list_argv[] = {kv_arg0, kv_arg1, kv_arg2};
+    lfs_t          *lfs = NULL;
+    lfs_dir_t       dir;
+    struct lfs_info info;
+    uint32_t        count = 0;
+    int             lfs_rt;
 
     (void)argc;
     (void)argv;
 
-    tal_kv_cmd(sizeof(list_argv) / sizeof(list_argv[0]), list_argv);
+    lfs = tal_lfs_get();
+    if (lfs == NULL) {
+        tal_cli_echo("ERR: tal_lfs_get returned NULL");
+        return;
+    }
+
+    memset(&dir, 0, sizeof(dir));
+    memset(&info, 0, sizeof(info));
+
+    lfs_rt = lfs_dir_open(lfs, &dir, "/");
+    if (lfs_rt != LFS_ERR_OK) {
+        cli_echof_("ERR: lfs_dir_open('/') rt=%d", lfs_rt);
+        return;
+    }
+
+    tal_cli_echo("--- KV list ---");
+    while ((lfs_rt = lfs_dir_read(lfs, &dir, &info)) > 0) {
+        uint8_t *value  = NULL;
+        size_t   length = 0;
+        OPERATE_RET rt;
+
+        if (info.name[0] == '\0' || strcmp(info.name, ".") == 0 || strcmp(info.name, "..") == 0) {
+            continue;
+        }
+
+        rt = tal_kv_get(info.name, &value, &length);
+        if (rt != OPRT_OK) {
+            cli_echof_("[%u] key=%s len=(n/a) rt=%d", (unsigned)count, info.name, rt);
+            count++;
+            continue;
+        }
+
+        cli_echof_("[%u] key=%s len=%u", (unsigned)count, info.name, (unsigned)length);
+        if (cli_kv_value_is_text_(value, length)) {
+            cli_echof_("     value=%s", (char *)value);
+        } else {
+            cli_print_kv_binary_preview_(value, length);
+        }
+
+        tal_kv_free(value);
+        count++;
+    }
+
+    if (lfs_rt < 0) {
+        cli_echof_("ERR: lfs_dir_read('/') rt=%d", lfs_rt);
+    }
+
+    (void)lfs_dir_close(lfs, &dir);
+    cli_echof_("Done. entries=%u", (unsigned)count);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1875,6 +2029,10 @@ static void cmd_cfg_set_channel_mode(int argc, char *argv[])
         return;
     }
 
+    if (strcmp(mode, IM_CHAN_WEIXIN) == 0) {
+        cli_clear_weixin_cfg_overrides_();
+    }
+
     rt = im_kv_set_string(IM_NVS_BOT, IM_NVS_KEY_CHANNEL_MODE, mode);
     if (rt != OPRT_OK) {
         cli_echof_("ERR: cfg_set_channel_mode rt=%d", rt);
@@ -2033,7 +2191,7 @@ static cli_cmd_t s_cli_cmd[] = {
     {.name = "sys_wifi_scan",         .help = "Scan nearby WiFi APs",                   .func = cmd_sys_wifi_scan},
 #endif
 
-    {.name = "fs_ls",                 .help = "List directory",                         .func = cmd_fs_ls},
+    {.name = "fs_ls",                 .help = "List directory tree (depth <= 3)",      .func = cmd_fs_ls},
     {.name = "fs_stat",               .help = "Show file or directory metadata",        .func = cmd_fs_stat},
     {.name = "fs_cat",                .help = "Print text file",                        .func = cmd_fs_cat},
     {.name = "fs_hexdump",            .help = "Hex dump file",                          .func = cmd_fs_hexdump},
