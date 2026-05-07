@@ -9,6 +9,7 @@
 #include "app_base_config.h"
 #include "channels/discord_bot.h"
 #include "channels/feishu_bot.h"
+#include "channels/qqbot_channel.h"
 #include "channels/telegram_bot.h"
 #include "im_config.h"
 #include "im_platform.h"
@@ -59,6 +60,8 @@ static void cmd_cfg_set_dc_channel(int argc, char *argv[]);
 static void cmd_cfg_set_fs_appid(int argc, char *argv[]);
 static void cmd_cfg_set_fs_appsecret(int argc, char *argv[]);
 static void cmd_cfg_set_fs_allow(int argc, char *argv[]);
+static void cmd_cfg_set_qq_appid(int argc, char *argv[]);
+static void cmd_cfg_set_qq_secret(int argc, char *argv[]);
 static void cmd_cfg_set_proxy(int argc, char *argv[]);
 static void cmd_cfg_clear_proxy(int argc, char *argv[]);
 static void cli_clear_weixin_cfg_overrides_(void);
@@ -270,6 +273,9 @@ static void cli_clear_im_cfg_overrides_(void)
     (void)im_kv_del(IM_NVS_FS, IM_NVS_KEY_FS_ALLOW_FROM);
     cli_clear_weixin_cfg_overrides_();
 
+    (void)im_kv_del(IM_NVS_QQ, IM_NVS_KEY_QQ_APP_ID);
+    (void)im_kv_del(IM_NVS_QQ, IM_NVS_KEY_QQ_SECRET);
+
     (void)http_proxy_clear();
 }
 
@@ -407,13 +413,15 @@ static void cmd_help(int argc, char *argv[])
     cli_echof_("  %-28s %s", "cfg_set_gw_port <port>", "Set OpenClaw gateway port");
     cli_echof_("  %-28s %s", "cfg_set_gw_token <token>", "Set OpenClaw gateway token");
     cli_echof_("  %-28s %s", "cfg_set_device_id <id>", "Set DuckyClaw device ID");
-    cli_echof_("  %-28s %s", "cfg_set_channel_mode <mode>", "Set IM channel mode (telegram|discord|feishu|weixin|OFF)");
+    cli_echof_("  %-28s %s", "cfg_set_channel_mode <mode>", "Set IM channel mode (telegram|discord|feishu|weixin|qqbot|OFF)");
     cli_echof_("  %-28s %s", "cfg_set_tg_token <token>", "Set Telegram token");
     cli_echof_("  %-28s %s", "cfg_set_dc_token <token>", "Set Discord token");
     cli_echof_("  %-28s %s", "cfg_set_dc_channel <id>", "Set Discord channel_id");
     cli_echof_("  %-28s %s", "cfg_set_fs_appid <id>", "Set Feishu app_id");
     cli_echof_("  %-28s %s", "cfg_set_fs_appsecret <secret>", "Set Feishu app_secret");
     cli_echof_("  %-28s %s", "cfg_set_fs_allow <csv>", "Set Feishu allow_from CSV");
+    cli_echof_("  %-28s %s", "cfg_set_qq_appid <id>", "Set QQ Bot app_id");
+    cli_echof_("  %-28s %s", "cfg_set_qq_secret <secret>", "Set QQ Bot client_secret");
     cli_echof_("  %-28s %s", "cfg_set_proxy <host> <port> [type]", "Set outbound proxy");
     cli_echof_("  %-28s %s", "cfg_clear_proxy", "Clear outbound proxy config");
     tal_cli_echo("");
@@ -479,6 +487,8 @@ static void cmd_cfg_show(int argc, char *argv[])
     cli_print_im_cfg_item_("fs.app_id", IM_NVS_FS, IM_NVS_KEY_FS_APP_ID, IM_SECRET_FS_APP_ID, true);
     cli_print_im_cfg_item_("fs.app_secret", IM_NVS_FS, IM_NVS_KEY_FS_APP_SECRET, IM_SECRET_FS_APP_SECRET, true);
     cli_print_im_cfg_item_("fs.allow_from", IM_NVS_FS, IM_NVS_KEY_FS_ALLOW_FROM, IM_SECRET_FS_ALLOW_FROM, true);
+    cli_print_im_cfg_item_("qq.app_id",     IM_NVS_QQ, IM_NVS_KEY_QQ_APP_ID,     IM_SECRET_QQ_APP_ID,     true);
+    cli_print_im_cfg_item_("qq.secret",     IM_NVS_QQ, IM_NVS_KEY_QQ_SECRET,     IM_SECRET_QQ_CLIENT_SECRET, true);
     cli_print_im_cfg_item_("proxy.host", IM_NVS_PROXY, IM_NVS_KEY_PROXY_HOST, IM_SECRET_PROXY_HOST, true);
     cli_print_im_cfg_item_("proxy.port", IM_NVS_PROXY, IM_NVS_KEY_PROXY_PORT, IM_SECRET_PROXY_PORT, false);
     cli_print_im_cfg_item_("proxy.type", IM_NVS_PROXY, IM_NVS_KEY_PROXY_TYPE, IM_SECRET_PROXY_TYPE, false);
@@ -612,7 +622,7 @@ static void cmd_cfg_set_channel_mode(int argc, char *argv[])
     const char *mode;
 
     if (argc < 2) {
-        tal_cli_echo("Usage: cfg_set_channel_mode <mode> (OFF|telegram|discord|feishu|weixin)");
+        tal_cli_echo("Usage: cfg_set_channel_mode <mode> (OFF|telegram|discord|feishu|weixin|qqbot)");
         return;
     }
 
@@ -621,8 +631,9 @@ static void cmd_cfg_set_channel_mode(int argc, char *argv[])
         strcmp(mode, IM_CHAN_TELEGRAM) != 0 &&
         strcmp(mode, IM_CHAN_DISCORD) != 0 &&
         strcmp(mode, IM_CHAN_FEISHU) != 0 &&
-        strcmp(mode, IM_CHAN_WEIXIN) != 0) {
-        tal_cli_echo("ERR: mode must be OFF | telegram | discord | feishu | weixin");
+        strcmp(mode, IM_CHAN_WEIXIN) != 0 &&
+        strcmp(mode, IM_CHAN_QQBOT) != 0) {
+        tal_cli_echo("ERR: mode must be OFF | telegram | discord | feishu | weixin | qqbot");
         return;
     }
 
@@ -706,6 +717,28 @@ static void cmd_cfg_set_fs_allow(int argc, char *argv[])
 }
 
 /**
+ * @brief Set QQ Bot app_id.
+ * @param[in] argc CLI argc
+ * @param[in] argv CLI argv
+ * @return none
+ */
+static void cmd_cfg_set_qq_appid(int argc, char *argv[])
+{
+    cli_set_im_cfg_value_(argc, argv, "cfg_set_qq_appid <app_id>", "qq app_id", qqbot_set_app_id);
+}
+
+/**
+ * @brief Set QQ Bot client_secret.
+ * @param[in] argc CLI argc
+ * @param[in] argv CLI argv
+ * @return none
+ */
+static void cmd_cfg_set_qq_secret(int argc, char *argv[])
+{
+    cli_set_im_cfg_value_(argc, argv, "cfg_set_qq_secret <secret>", "qq client_secret", qqbot_set_client_secret);
+}
+
+/**
  * @brief Set outbound proxy configuration.
  * @param[in] argc CLI argc
  * @param[in] argv CLI argv
@@ -781,6 +814,8 @@ static cli_cmd_t s_cli_cmd[] = {
     {.name = "cfg_set_fs_appid",      .help = "Set Feishu app_id",                      .func = cmd_cfg_set_fs_appid},
     {.name = "cfg_set_fs_appsecret",  .help = "Set Feishu app_secret",                  .func = cmd_cfg_set_fs_appsecret},
     {.name = "cfg_set_fs_allow",      .help = "Set Feishu allow_from CSV",              .func = cmd_cfg_set_fs_allow},
+    {.name = "cfg_set_qq_appid",      .help = "Set QQ Bot app_id",                      .func = cmd_cfg_set_qq_appid},
+    {.name = "cfg_set_qq_secret",     .help = "Set QQ Bot client_secret",               .func = cmd_cfg_set_qq_secret},
     {.name = "cfg_set_proxy",         .help = "Set outbound proxy",                     .func = cmd_cfg_set_proxy},
     {.name = "cfg_clear_proxy",       .help = "Clear outbound proxy",                   .func = cmd_cfg_clear_proxy},
 };

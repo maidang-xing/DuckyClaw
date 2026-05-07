@@ -32,7 +32,7 @@ extern "C" {
 #endif
 
 // IM configuration
-// feishu | telegram | discord | weixin
+// feishu | telegram | discord | weixin | qqbot
 // NOTE: ESP32-S3 does not support weixin
 #ifndef IM_SECRET_CHANNEL_MODE
 #define IM_SECRET_CHANNEL_MODE      "feishu"
@@ -54,6 +54,13 @@ extern "C" {
 #endif
 #ifndef IM_SECRET_DC_CHANNEL_ID
 #define IM_SECRET_DC_CHANNEL_ID     ""
+#endif
+
+#ifndef IM_SECRET_QQ_APP_ID
+#define IM_SECRET_QQ_APP_ID         ""
+#endif
+#ifndef IM_SECRET_QQ_CLIENT_SECRET
+#define IM_SECRET_QQ_CLIENT_SECRET  ""
 #endif
 
 // WebSocket authentication token (empty string = auth disabled)

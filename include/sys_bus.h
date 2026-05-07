@@ -31,6 +31,7 @@ extern "C" {
 #define SYS_CHAN_FEISHU    IM_CHAN_FEISHU
 #define SYS_CHAN_WEIXIN    IM_CHAN_WEIXIN
 #define SYS_CHAN_WS        IM_CHAN_WS
+#define SYS_CHAN_QQBOT     IM_CHAN_QQBOT
 #define SYS_CHAN_ACP       "acp"
 #define SYS_CHAN_CRON      "cron"
 #define SYS_CHAN_HEARTBEAT "heartbeat"

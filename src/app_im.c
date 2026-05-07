@@ -17,6 +17,7 @@
 #include "tal_system.h"
 #include "tuya_app_config.h"
 #include "channels/feishu_bot.h"
+#include "channels/qqbot_channel.h"
 #include "ws_server.h"
 #include <stdatomic.h>
 
@@ -64,6 +65,8 @@ static const char *__app_im_map_channel(const char *channel)
         return IM_CHAN_FEISHU;
     } else if (strcmp(channel, IM_CHAN_WEIXIN) == 0) {
         return IM_CHAN_WEIXIN;
+    } else if (strcmp(channel, IM_CHAN_QQBOT) == 0) {
+        return IM_CHAN_QQBOT;
     } else if (strcmp(channel, IM_CHAN_WS) == 0) {
         return IM_CHAN_WS;
     } else {
@@ -132,6 +135,11 @@ static OPERATE_RET __send_weixin(const char *chat_id, const char *text)
     return weixin_send_message(chat_id, text ? text : "");
 }
 
+static OPERATE_RET __send_qqbot(const char *chat_id, const char *text)
+{
+    return qqbot_send_message(chat_id, text ? text : "");
+}
+
 static OPERATE_RET __send_ws(const char *chat_id, const char *text)
 {
     if (!__app_im_ws_token_valid()) {
@@ -197,6 +205,7 @@ static void __register_im_senders(void)
     sys_bus_register_sender(SYS_CHAN_DISCORD,  __send_discord);
     sys_bus_register_sender(SYS_CHAN_FEISHU,   __send_feishu);
     sys_bus_register_sender(SYS_CHAN_WEIXIN,   __send_weixin);
+    sys_bus_register_sender(SYS_CHAN_QQBOT,    __send_qqbot);
     sys_bus_register_sender(SYS_CHAN_WS,       __send_ws);
 }
 
@@ -258,6 +267,12 @@ static OPERATE_RET app_im_init_evt_cb(void *data)
             rt = weixin_bot_start();
         }
         s_channel = IM_CHAN_WEIXIN;
+    } else if (strcmp(mode, IM_CHAN_QQBOT) == 0) {
+        rt = qqbot_channel_init();
+        if (rt == OPRT_OK) {
+            rt = qqbot_channel_start();
+        }
+        s_channel = IM_CHAN_QQBOT;
     } else {
         PR_WARN("Turned off IM channel '%s'", mode);
         s_channel = IM_CHAN_OFF;
