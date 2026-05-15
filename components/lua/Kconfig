@@ -50,4 +50,13 @@ config ENABLE_LUA_MODULE_SYS
         Expose sys.uptime_ms(), sys.random(range), sys.free_heap(),
         and sys.reset_reason() to Lua scripts via tal_system APIs.
 
+config ENABLE_LUA_MODULE_PWM
+    bool "Enable lua_module_pwm (PWM control from Lua)"
+    depends on ENABLE_LUA
+    default n
+    help
+        Expose pwm.init(ch, freq, duty), pwm.deinit(ch),
+        pwm.set_duty(ch, duty), pwm.set_freq(ch, freq) to Lua scripts.
+        duty range: 0-10000 (10000 = 100%). Requires tkl_pwm support.
+
 endif # ENABLE_LUA
