@@ -825,17 +825,23 @@ static void cmd_cfg_clear_proxy(int argc, char *argv[])
  */
 static void cmd_lua_run(int argc, char *argv[])
 {
+    char        out[512] = {0};
+    OPERATE_RET rt;
+
     if (argc < 2) {
         tal_cli_echo("Usage: lua_run <lua_script>");
         tal_cli_echo("  Example: lua_run \"print(sys.uptime_ms())\"");
         return;
     }
 
-    char out[512] = {0};
-    OPERATE_RET rt = lua_runtime_run_string(argv[1], 5000, out, sizeof(out));
-    tal_cli_echo(out);
+    rt = lua_runtime_run_string(argv[1], 5000, out, sizeof(out));
     if (rt != OPRT_OK) {
-        cli_echof_("lua_run: returned rt=%d", rt);
+        cli_echof_("ERR: lua_run rt=%d", rt);
+        if (out[0] != '\0') {
+            tal_cli_echo(out);
+        }
+    } else {
+        tal_cli_echo(out);
     }
 }
 #endif
@@ -849,13 +855,15 @@ static void cmd_lua_run(int argc, char *argv[])
  */
 static void cmd_ai_say(int argc, char *argv[])
 {
+    OPERATE_RET rt;
+
     if (argc < 2) {
         tal_cli_echo("Usage: ai_say <text>");
         tal_cli_echo("  Sends text to the AI agent cloud, same as an IM message.");
         return;
     }
 
-    OPERATE_RET rt = ai_agent_send_text(argv[1]);
+    rt = ai_agent_send_text(argv[1]);
     if (rt != OPRT_OK) {
         cli_echof_("ai_say: send failed rt=%d", rt);
     } else {
@@ -878,7 +886,7 @@ static cli_cmd_t s_cli_cmd[] = {
     {.name = "cfg_set_gw_port",       .help = "Set OpenClaw gateway port",              .func = cmd_cfg_set_gw_port},
     {.name = "cfg_set_gw_token",      .help = "Set OpenClaw gateway token",             .func = cmd_cfg_set_gw_token},
     {.name = "cfg_set_device_id",     .help = "Set device ID",                          .func = cmd_cfg_set_device_id},
-    {.name = "cfg_set_channel_mode",  .help = "Set IM channel mode (OFF|telegram|discord|feishu|weixin)", .func = cmd_cfg_set_channel_mode},
+    {.name = "cfg_set_channel_mode",  .help = "Set IM channel mode (OFF|telegram|discord|feishu|weixin|qqbot)", .func = cmd_cfg_set_channel_mode},
     {.name = "cfg_set_tg_token",      .help = "Set Telegram token",                     .func = cmd_cfg_set_tg_token},
     {.name = "cfg_set_dc_token",      .help = "Set Discord token",                      .func = cmd_cfg_set_dc_token},
     {.name = "cfg_set_dc_channel",    .help = "Set Discord channel_id",                 .func = cmd_cfg_set_dc_channel},
