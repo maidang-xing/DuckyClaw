@@ -1,3 +1,16 @@
+/**
+ * @file lua_module_pwm.c
+ * @brief Lua C module exposing TuyaOpen PWM control to sandboxed scripts.
+ *
+ * Lua API (available after lua_module_pwm_register()):
+ *   pwm.init(ch, freq, duty)   -- init + start; duty 0..10000 (10000=100%)
+ *   pwm.deinit(ch)             -- stop + deinit
+ *   pwm.set_duty(ch, duty)     -- update duty while running
+ *   pwm.set_freq(ch, freq)     -- update frequency (Hz) while running
+ *
+ * @copyright Copyright (c) 2021-2026 Tuya Inc. All Rights Reserved.
+ */
+
 #include "lua_module_pwm.h"
 
 #include "tkl_pwm.h"
@@ -48,8 +61,9 @@ static int lua_pwm_deinit(lua_State *L)
 {
     int ch = (int)luaL_checkinteger(L, 1);
     if (!__ch_valid(ch)) {
-        return luaL_error(L, "pwm: ch %d out of range", ch);
+        return luaL_error(L, "pwm: ch %d out of range (0-%d)", ch, PWM_CH_MAX - 1);
     }
+    /* best-effort: ignore errors so deinit always completes cleanup */
     tkl_pwm_stop((TUYA_PWM_NUM_E)ch);
     tkl_pwm_deinit((TUYA_PWM_NUM_E)ch);
     return 0;
@@ -60,7 +74,7 @@ static int lua_pwm_set_duty(lua_State *L)
     int ch   = (int)luaL_checkinteger(L, 1);
     int duty = (int)luaL_checkinteger(L, 2);
     if (!__ch_valid(ch)) {
-        return luaL_error(L, "pwm: ch %d out of range", ch);
+        return luaL_error(L, "pwm: ch %d out of range (0-%d)", ch, PWM_CH_MAX - 1);
     }
     if (duty < 0 || duty > (int)PWM_CYCLE) {
         return luaL_error(L, "pwm: duty must be 0..%u", PWM_CYCLE);
@@ -76,7 +90,7 @@ static int lua_pwm_set_freq(lua_State *L)
     int ch   = (int)luaL_checkinteger(L, 1);
     int freq = (int)luaL_checkinteger(L, 2);
     if (!__ch_valid(ch)) {
-        return luaL_error(L, "pwm: ch %d out of range", ch);
+        return luaL_error(L, "pwm: ch %d out of range (0-%d)", ch, PWM_CH_MAX - 1);
     }
     if (freq <= 0) {
         return luaL_error(L, "pwm: freq must be > 0");

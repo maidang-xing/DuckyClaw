@@ -1,10 +1,23 @@
+/**
+ * @file lua_module_adc.c
+ * @brief Lua C module exposing TuyaOpen ADC reads to sandboxed scripts.
+ *
+ * Lua API (available after lua_module_adc_register()):
+ *   local mv  = adc.read_voltage(port, ch)  -- voltage in millivolts
+ *   local raw = adc.read_raw(port, ch)      -- raw ADC count
+ *
+ * Each call inits ADC in single-shot mode, reads one sample, then deinits.
+ *
+ * @copyright Copyright (c) 2021-2026 Tuya Inc. All Rights Reserved.
+ */
+
 #include "lua_module_adc.h"
 
 #include "tkl_adc.h"
 #include "lauxlib.h"
 
 #define ADC_PORT_MAX  TUYA_ADC_NUM_MAX
-#define ADC_CH_MAX    16
+#define ADC_CH_MAX    16  /* T5AI supports up to 16 ADC channels (ch0..ch15) */
 
 static bool __port_valid(int port)
 {
@@ -43,6 +56,7 @@ static int lua_adc_read_voltage(lua_State *L)
     }
 
     if (__adc_init_single(port, ch) != OPRT_OK) {
+        tkl_adc_deinit((TUYA_ADC_NUM_E)port);
         return luaL_error(L, "adc: init failed (port%d ch%d)", port, ch);
     }
 
@@ -70,6 +84,7 @@ static int lua_adc_read_raw(lua_State *L)
     }
 
     if (__adc_init_single(port, ch) != OPRT_OK) {
+        tkl_adc_deinit((TUYA_ADC_NUM_E)port);
         return luaL_error(L, "adc: init failed (port%d ch%d)", port, ch);
     }
 

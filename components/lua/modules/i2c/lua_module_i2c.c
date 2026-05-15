@@ -1,3 +1,16 @@
+/**
+ * @file lua_module_i2c.c
+ * @brief Lua C module exposing TuyaOpen I2C master to sandboxed scripts.
+ *
+ * Lua API (available after lua_module_i2c_register()):
+ *   i2c.init(port, speed_khz)          -- init master (100/400/1000 kHz)
+ *   i2c.deinit(port)                   -- deinit
+ *   i2c.write(port, addr, data_str)    -- master send; addr is 7-bit
+ *   local s = i2c.read(port, addr, n)  -- master receive n bytes -> string
+ *
+ * @copyright Copyright (c) 2021-2026 Tuya Inc. All Rights Reserved.
+ */
+
 #include "lua_module_i2c.h"
 
 #include "tkl_i2c.h"
@@ -45,6 +58,7 @@ static int lua_i2c_deinit(lua_State *L)
     if (!__port_valid(port)) {
         return luaL_error(L, "i2c: port %d out of range", port);
     }
+    /* best-effort: ignore error so deinit always completes cleanup */
     tkl_i2c_deinit((TUYA_I2C_NUM_E)port);
     return 0;
 }
@@ -58,6 +72,9 @@ static int lua_i2c_write(lua_State *L)
 
     if (!__port_valid(port)) {
         return luaL_error(L, "i2c: port %d out of range", port);
+    }
+    if (addr < 0 || addr > 0x7F) {
+        return luaL_error(L, "i2c: addr 0x%02x invalid (7-bit: 0x08..0x77)", addr);
     }
     if (len == 0) {
         return luaL_error(L, "i2c: write data is empty");
@@ -79,11 +96,14 @@ static int lua_i2c_read(lua_State *L)
     if (!__port_valid(port)) {
         return luaL_error(L, "i2c: port %d out of range", port);
     }
+    if (addr < 0 || addr > 0x7F) {
+        return luaL_error(L, "i2c: addr 0x%02x invalid (7-bit: 0x08..0x77)", addr);
+    }
     if (rlen <= 0 || rlen > (int)I2C_READ_MAX) {
         return luaL_error(L, "i2c: read len must be 1..%u", I2C_READ_MAX);
     }
 
-    char buf[I2C_READ_MAX];
+    char buf[I2C_READ_MAX] = {0};
     if (tkl_i2c_master_receive((TUYA_I2C_NUM_E)port, (UINT16_T)addr,
                                 buf, (UINT32_T)rlen, FALSE) != OPRT_OK) {
         return luaL_error(L, "i2c: read failed (port%d addr=0x%02x)", port, addr);

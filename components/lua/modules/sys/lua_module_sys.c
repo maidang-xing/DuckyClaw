@@ -1,3 +1,16 @@
+/**
+ * @file lua_module_sys.c
+ * @brief Lua C module exposing TuyaOpen system info to sandboxed scripts.
+ *
+ * Lua API (available after lua_module_sys_register()):
+ *   local ms = sys.uptime_ms()      -- ms since boot
+ *   local n  = sys.random(range)    -- integer in [0, range)
+ *   local b  = sys.free_heap()      -- free internal heap bytes
+ *   local r  = sys.reset_reason()   -- string describing last reset
+ *
+ * @copyright Copyright (c) 2021-2026 Tuya Inc. All Rights Reserved.
+ */
+
 #include "lua_module_sys.h"
 
 #include "tal_api.h"
