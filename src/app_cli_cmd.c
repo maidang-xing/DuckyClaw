@@ -26,6 +26,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(ENABLE_LUA) && (ENABLE_LUA == 1)
+#include "lua_runtime.h"
+#endif
+#if defined(ENABLE_AI_AGENT) && (ENABLE_AI_AGENT == 1)
+#include "ai_agent.h"
+#endif
+
 /* ---------------------------------------------------------------------------
  * Macros
  * --------------------------------------------------------------------------- */
@@ -65,6 +72,12 @@ static void cmd_cfg_set_qq_secret(int argc, char *argv[]);
 static void cmd_cfg_set_proxy(int argc, char *argv[]);
 static void cmd_cfg_clear_proxy(int argc, char *argv[]);
 static void cli_clear_weixin_cfg_overrides_(void);
+#if defined(ENABLE_LUA) && (ENABLE_LUA == 1)
+static void cmd_lua_run(int argc, char *argv[]);
+#endif
+#if defined(ENABLE_AI_AGENT) && (ENABLE_AI_AGENT == 1)
+static void cmd_ai_say(int argc, char *argv[]);
+#endif
 
 /* ---------------------------------------------------------------------------
  * Internal helpers
@@ -426,6 +439,16 @@ static void cmd_help(int argc, char *argv[])
     cli_echof_("  %-28s %s", "cfg_clear_proxy", "Clear outbound proxy config");
     tal_cli_echo("");
     tal_cli_echo("Note: cfg_* changes take effect after reconnect or reboot.");
+#if defined(ENABLE_LUA) && (ENABLE_LUA == 1)
+    tal_cli_echo("");
+    tal_cli_echo("[Lua]");
+    cli_echof_("  %-28s %s", "lua_run <script>", "Execute inline Lua 5.5 script");
+#endif
+#if defined(ENABLE_AI_AGENT) && (ENABLE_AI_AGENT == 1)
+    tal_cli_echo("");
+    tal_cli_echo("[AI]");
+    cli_echof_("  %-28s %s", "ai_say <text>", "Send text directly to AI agent");
+#endif
 }
 
 /* ---------------------------------------------------------------------------
@@ -793,6 +816,54 @@ static void cmd_cfg_clear_proxy(int argc, char *argv[])
     tal_cli_echo("OK: proxy cleared");
 }
 
+#if defined(ENABLE_LUA) && (ENABLE_LUA == 1)
+/**
+ * @brief Execute an inline Lua 5.5 script.
+ * @param[in] argc CLI argc
+ * @param[in] argv CLI argv
+ * @return none
+ */
+static void cmd_lua_run(int argc, char *argv[])
+{
+    if (argc < 2) {
+        tal_cli_echo("Usage: lua_run <lua_script>");
+        tal_cli_echo("  Example: lua_run \"print(sys.uptime_ms())\"");
+        return;
+    }
+
+    char out[512] = {0};
+    OPERATE_RET rt = lua_runtime_run_string(argv[1], 5000, out, sizeof(out));
+    tal_cli_echo(out);
+    if (rt != OPRT_OK) {
+        cli_echof_("lua_run: returned rt=%d", rt);
+    }
+}
+#endif
+
+#if defined(ENABLE_AI_AGENT) && (ENABLE_AI_AGENT == 1)
+/**
+ * @brief Send text to the AI agent cloud.
+ * @param[in] argc CLI argc
+ * @param[in] argv CLI argv
+ * @return none
+ */
+static void cmd_ai_say(int argc, char *argv[])
+{
+    if (argc < 2) {
+        tal_cli_echo("Usage: ai_say <text>");
+        tal_cli_echo("  Sends text to the AI agent cloud, same as an IM message.");
+        return;
+    }
+
+    OPERATE_RET rt = ai_agent_send_text(argv[1]);
+    if (rt != OPRT_OK) {
+        cli_echof_("ai_say: send failed rt=%d", rt);
+    } else {
+        cli_echof_("ai_say: sent -> %s", argv[1]);
+    }
+}
+#endif
+
 /* ---------------------------------------------------------------------------
  * Command table
  * --------------------------------------------------------------------------- */
@@ -818,6 +889,12 @@ static cli_cmd_t s_cli_cmd[] = {
     {.name = "cfg_set_qq_secret",     .help = "Set QQ Bot client_secret",               .func = cmd_cfg_set_qq_secret},
     {.name = "cfg_set_proxy",         .help = "Set outbound proxy",                     .func = cmd_cfg_set_proxy},
     {.name = "cfg_clear_proxy",       .help = "Clear outbound proxy",                   .func = cmd_cfg_clear_proxy},
+#if defined(ENABLE_LUA) && (ENABLE_LUA == 1)
+    {.name = "lua_run", .help = "Execute inline Lua 5.5 script", .func = cmd_lua_run},
+#endif
+#if defined(ENABLE_AI_AGENT) && (ENABLE_AI_AGENT == 1)
+    {.name = "ai_say", .help = "Send text to AI agent cloud", .func = cmd_ai_say},
+#endif
 };
 
 /* ---------------------------------------------------------------------------
