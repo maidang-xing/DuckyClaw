@@ -81,6 +81,18 @@ if (CONFIG_ENABLE_LUA_MODULE_PWM STREQUAL "y")
     )
 endif()
 
+if (CONFIG_ENABLE_LUA_MODULE_I2C STREQUAL "y")
+    list(APPEND LUA_PORT_SRCS
+        ${MODULE_PATH}/modules/i2c/lua_module_i2c.c
+    )
+endif()
+
+if (CONFIG_ENABLE_LUA_MODULE_ADC STREQUAL "y")
+    list(APPEND LUA_PORT_SRCS
+        ${MODULE_PATH}/modules/adc/lua_module_adc.c
+    )
+endif()
+
 # ----------------------------------------------------------------------------
 # Attach to the main app library
 # ----------------------------------------------------------------------------
@@ -100,6 +112,7 @@ target_include_directories(${EXAMPLE_LIB}
         ${MODULE_PATH}/modules/delay
         ${MODULE_PATH}/modules/sys
         ${MODULE_PATH}/modules/pwm
+        ${MODULE_PATH}/modules/i2c
 )
 
 endif()

@@ -47,6 +47,10 @@
 #if defined(ENABLE_LUA_MODULE_PWM) && (ENABLE_LUA_MODULE_PWM == 1)
 #include "lua_module_pwm.h"
 #endif
+
+#if defined(ENABLE_LUA_MODULE_I2C) && (ENABLE_LUA_MODULE_I2C == 1)
+#include "lua_module_i2c.h"
+#endif
 /***********************************************************
 ***********************function define**********************
 ***********************************************************/
@@ -119,6 +123,10 @@ static OPERATE_RET __ai_mcp_init(void *data)
 
     #if defined(ENABLE_LUA_MODULE_PWM) && (ENABLE_LUA_MODULE_PWM == 1)
     lua_module_pwm_register();
+    #endif
+
+    #if defined(ENABLE_LUA_MODULE_I2C) && (ENABLE_LUA_MODULE_I2C == 1)
+    lua_module_i2c_register();
     #endif
 
     PR_DEBUG("MCP Server initialized successfully with tools");

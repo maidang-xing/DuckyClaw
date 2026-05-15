@@ -59,4 +59,22 @@ config ENABLE_LUA_MODULE_PWM
         pwm.set_duty(ch, duty), pwm.set_freq(ch, freq) to Lua scripts.
         duty range: 0-10000 (10000 = 100%). Requires tkl_pwm support.
 
+config ENABLE_LUA_MODULE_I2C
+    bool "Enable lua_module_i2c (I2C master from Lua)"
+    depends on ENABLE_LUA
+    default n
+    help
+        Expose i2c.init(port, speed_khz), i2c.deinit(port),
+        i2c.write(port, addr, data_str), i2c.read(port, addr, len)
+        to Lua scripts. Requires tkl_i2c support (master mode only).
+
+config ENABLE_LUA_MODULE_ADC
+    bool "Enable lua_module_adc (ADC read from Lua)"
+    depends on ENABLE_LUA
+    default n
+    help
+        Expose adc.read_voltage(port, ch) and adc.read_raw(port, ch)
+        to Lua scripts. Each call inits the ADC in single-shot mode,
+        reads one sample, then deinits. Requires tkl_adc support.
+
 endif # ENABLE_LUA
