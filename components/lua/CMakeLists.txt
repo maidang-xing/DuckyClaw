@@ -69,6 +69,12 @@ if (CONFIG_ENABLE_LUA_MODULE_DELAY STREQUAL "y")
     )
 endif()
 
+if (CONFIG_ENABLE_LUA_MODULE_SYS STREQUAL "y")
+    list(APPEND LUA_PORT_SRCS
+        ${MODULE_PATH}/modules/sys/lua_module_sys.c
+    )
+endif()
+
 # ----------------------------------------------------------------------------
 # Attach to the main app library
 # ----------------------------------------------------------------------------
@@ -86,6 +92,7 @@ target_include_directories(${EXAMPLE_LIB}
         ${MODULE_PATH}/port_include
         ${MODULE_PATH}/modules/gpio
         ${MODULE_PATH}/modules/delay
+        ${MODULE_PATH}/modules/sys
 )
 
 endif()

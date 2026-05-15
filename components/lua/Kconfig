@@ -42,4 +42,12 @@ config ENABLE_LUA_MODULE_DELAY
         delay_ms uses tal_system_sleep (yields the task); delay_us uses
         tkl_system_sleep_us and is capped at 1_000_000 us per call.
 
+config ENABLE_LUA_MODULE_SYS
+    bool "Enable lua_module_sys (system info from Lua)"
+    depends on ENABLE_LUA
+    default n
+    help
+        Expose sys.uptime_ms(), sys.random(range), sys.free_heap(),
+        and sys.reset_reason() to Lua scripts via tal_system APIs.
+
 endif # ENABLE_LUA

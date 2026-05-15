@@ -39,6 +39,10 @@
 #if defined(ENABLE_LUA_MODULE_DELAY) && (ENABLE_LUA_MODULE_DELAY == 1)
 #include "lua_module_delay.h"
 #endif
+
+#if defined(ENABLE_LUA_MODULE_SYS) && (ENABLE_LUA_MODULE_SYS == 1)
+#include "lua_module_sys.h"
+#endif
 /***********************************************************
 ***********************function define**********************
 ***********************************************************/
@@ -103,6 +107,10 @@ static OPERATE_RET __ai_mcp_init(void *data)
 
     #if defined(ENABLE_LUA_MODULE_DELAY) && (ENABLE_LUA_MODULE_DELAY == 1)
     lua_module_delay_register();
+    #endif
+
+    #if defined(ENABLE_LUA_MODULE_SYS) && (ENABLE_LUA_MODULE_SYS == 1)
+    lua_module_sys_register();
     #endif
 
     PR_DEBUG("MCP Server initialized successfully with tools");
