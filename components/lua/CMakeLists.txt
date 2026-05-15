@@ -113,6 +113,7 @@ target_include_directories(${EXAMPLE_LIB}
         ${MODULE_PATH}/modules/sys
         ${MODULE_PATH}/modules/pwm
         ${MODULE_PATH}/modules/i2c
+        ${MODULE_PATH}/modules/adc
 )
 
 endif()
