@@ -222,6 +222,10 @@ static void __ai_chat_handle_event(AI_NOTIFY_EVENT_T *event)
     }
 }
 
+#if defined(ENABLE_COMP_AI_DISPLAY) && (ENABLE_COMP_AI_DISPLAY == 1)
+extern void app_ui_action_register(void);
+#endif
+
 OPERATE_RET tuyaopen_claw_chat_init(void)
 {
     OPERATE_RET rt = OPRT_OK;
@@ -233,6 +237,11 @@ OPERATE_RET tuyaopen_claw_chat_init(void)
     };
     TUYA_CALL_ERR_RETURN(ai_chat_init(&ai_chat_cfg));
 
+#if defined(ENABLE_COMP_AI_DISPLAY) && (ENABLE_COMP_AI_DISPLAY == 1)
+    /* Register popup (+ button) action handler: camera / album / add-image attach */
+    app_ui_action_register();
+#endif
+
 #if defined(ENABLE_COMP_AI_VIDEO) && (ENABLE_COMP_AI_VIDEO == 1)
     TUYA_CALL_ERR_LOG(ai_video_init());
     TUYA_CALL_ERR_LOG(ai_video_set_yuv_frame_flush_cb(__ai_video_display_flush));
@@ -240,6 +249,11 @@ OPERATE_RET tuyaopen_claw_chat_init(void)
 
 #if defined(ENABLE_COMP_AI_MCP) && (ENABLE_COMP_AI_MCP == 1)
     TUYA_CALL_ERR_RETURN(ai_mcp_init());
+#endif
+
+#if defined(ENABLE_COMP_AI_PICTURE) && (ENABLE_COMP_AI_PICTURE == 1)
+    /* Create/register the "ai_picture" album so album + add-image popup actions resolve */
+    TUYA_CALL_ERR_RETURN(ai_picture_init());
 #endif
 
     // Free heap size
