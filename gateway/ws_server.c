@@ -1,6 +1,6 @@
 /**
  * @file ws_server.c
- * @brief WebSocket server implementation for TuyaOpenClaw gateway
+ * @brief WebSocket server implementation for TClaw gateway
  *
  * Ported from TuyaOpen/apps/mimiclaw/gateway/ws_server.c.
  * Key adaptations:

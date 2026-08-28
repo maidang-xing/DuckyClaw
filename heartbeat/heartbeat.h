@@ -1,6 +1,6 @@
 /**
  * @file heartbeat.h
- * @brief Heartbeat service for TuyaOpenClaw
+ * @brief Heartbeat service for TClaw
  * @version 0.1
  * @date 2025-03-25
  *

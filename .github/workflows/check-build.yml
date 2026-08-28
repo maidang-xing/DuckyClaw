@@ -1,4 +1,4 @@
-name: TuyaOpenClaw Check Build
+name: TClaw Check Build
 run-name: ${{ github.actor }} triggered build check
 on:
   push:

@@ -1,18 +1,18 @@
-# TuyaOpenClaw Lua 模块移植实现文档
+# TClaw Lua 模块移植实现文档
 
-本文档记录 TuyaOpenClaw（基于 TuyaOpen C SDK 的硬件 AI Agent）中 Lua 5.5 沙盒运行时及硬件模块的实现方案,目的是让其它开发者能够：
+本文档记录 TClaw（基于 TuyaOpen C SDK 的硬件 AI Agent）中 Lua 5.5 沙盒运行时及硬件模块的实现方案,目的是让其它开发者能够：
 
-1. 理解 TuyaOpenClaw 中 Lua 子系统的整体架构;
+1. 理解 TClaw 中 Lua 子系统的整体架构;
 2. 复用现有沙盒/注册器模式给设备增加新的硬件模块（PWM、I2C、UART、ADC 等）;
 3. 在其它 TuyaOpen 板型上重新启用本子系统。
 
 ## 0. 背景
 
-[TuyaOpenClaw](https://github.com/tuya/TuyaOpenClaw)（[官网](https://tuyaopen.ai/zh/tuyaopenclaw)）是 [TuyaOpen](https://tuyaopen.ai) 上的开源硬件 AI Agent,主战平台是 Tuya T5AI 开发板（也支持 ESP32、Linux、Raspberry Pi）。其核心是一个端侧 Agent 循环,通过 IM 通道（Telegram/Discord/Feishu）与用户交互,并通过 MCP 风格的工具协议在设备上执行操作。
+[TClaw](https://github.com/tuya/TClaw)（[官网](https://tuyaopen.ai/zh/tclaw)）是 [TuyaOpen](https://tuyaopen.ai) 上的开源硬件 AI Agent,主战平台是 Tuya T5AI 开发板（也支持 ESP32、Linux、Raspberry Pi）。其核心是一个端侧 Agent 循环,通过 IM 通道（Telegram/Discord/Feishu）与用户交互,并通过 MCP 风格的工具协议在设备上执行操作。
 
-为了让云端 LLM 能够"动态写一段小代码,在设备上运行后拿结果",TuyaOpenClaw 引入了 [esp-claw](https://esp-claw.com/zh-cn/)（参考实现）的 Lua 子系统设计：把 Lua 5.5 解释器嵌入设备,作为一个名为 `lua_run_script` 的 MCP 工具暴露给 LLM。沙盒里只开放安全的标准库子集 + 设备硬件模块（GPIO、延时等），让 LLM 既能做计算/字符串处理,也能直接控 IO、调时序。
+为了让云端 LLM 能够"动态写一段小代码,在设备上运行后拿结果",TClaw 引入了 [esp-claw](https://esp-claw.com/zh-cn/)（参考实现）的 Lua 子系统设计：把 Lua 5.5 解释器嵌入设备,作为一个名为 `lua_run_script` 的 MCP 工具暴露给 LLM。沙盒里只开放安全的标准库子集 + 设备硬件模块（GPIO、延时等），让 LLM 既能做计算/字符串处理,也能直接控 IO、调时序。
 
-与 esp-claw 不同的是,TuyaOpenClaw 的硬件 API 走 TuyaOpen 的 `tkl_*` / `tal_*` 抽象层,因此模块代码全部按 TuyaOpen 接口重写;架构（沙盒 + 模块注册器 + 三层目录）则与 esp-claw 一致。
+与 esp-claw 不同的是,TClaw 的硬件 API 走 TuyaOpen 的 `tkl_*` / `tal_*` 抽象层,因此模块代码全部按 TuyaOpen 接口重写;架构（沙盒 + 模块注册器 + 三层目录）则与 esp-claw 一致。
 
 ## 1. 整体架构
 
@@ -52,7 +52,7 @@
 ## 2. 目录结构
 
 ```
-TuyaOpenClaw/
+TClaw/
 ├── tools/
 │   └── tool_lua.{c,h}                # MCP 工具：lua_run_script
 ├── components/lua/
@@ -61,7 +61,7 @@ TuyaOpenClaw/
 │   ├── lua/                          # Lua 5.5 上游源码（精简 — 见 §3.1）
 │   ├── include/
 │   │   └── luaconf.h                 # 上游默认配置
-│   ├── port/                         # TuyaOpenClaw 集成层
+│   ├── port/                         # TClaw 集成层
 │   │   ├── linit_sandbox.c           # 替换上游 linit.c：仅打开安全库
 │   │   ├── lua_module_os_safe.c      # 安全 os 子集 (time/date)
 │   │   ├── lua_module_registry.c     # 模块注册器
@@ -478,7 +478,7 @@ LLM 看到的"Lua 能力"通过两个途径合成:
 
 ### 5.2 Skills 摘要（弱信号 + 完整文档）
 
-TuyaOpenClaw 的 `skill_loader` 会扫描设备 SD 卡 `/sdcard/skills/*.md`,把每个 `.md` 的标题+第一段聚合到 system prompt,并提示 LLM "use read_file to load full instructions"。
+TClaw 的 `skill_loader` 会扫描设备 SD 卡 `/sdcard/skills/*.md`,把每个 `.md` 的标题+第一段聚合到 system prompt,并提示 LLM "use read_file to load full instructions"。
 
 为此项目维护三份配套的 skill 文档:
 
@@ -490,7 +490,7 @@ TuyaOpenClaw 的 `skill_loader` 会扫描设备 SD 卡 `/sdcard/skills/*.md`,把
 
 并把精简版同步进 `skills/skill_loader.c` 的 `BUILTIN_LUA_RUN`/`BUILTIN_LUA_GPIO`/`BUILTIN_LUA_DELAY` 内置串中,首次启动 `skill_loader_init()` 会自动写到 `/sdcard/skills/lua_*.md`(已存在则跳过)。
 
-参见 [hardware-skill 文档](https://tuyaopen.ai/zh/docs/tuyaopenclaw/hardware-skill)。
+参见 [hardware-skill 文档](https://tuyaopen.ai/zh/docs/tclaw/hardware-skill)。
 
 ## 6. Lua 端 API 参考
 
@@ -709,10 +709,10 @@ CONFIG_ENABLE_LUA_MODULE_PWM=y
 
 ## 10. 参考资料
 
-- TuyaOpenClaw 项目主页: <https://tuyaopen.ai/zh/tuyaopenclaw>
-- TuyaOpenClaw 源码: <https://github.com/tuya/TuyaOpenClaw>
+- TClaw 项目主页: <https://tuyaopen.ai/zh/tclaw>
+- TClaw 源码: <https://github.com/tuya/TClaw>
 - Claw 平台: <https://claw.tuyasmart.com/>
-- TuyaOpenClaw 硬件 Skill 指南: <https://tuyaopen.ai/zh/docs/tuyaopenclaw/hardware-skill>
+- TClaw 硬件 Skill 指南: <https://tuyaopen.ai/zh/docs/tclaw/hardware-skill>
 - T5AI 引脚映射: <https://www.tuyaopen.ai/zh/docs/hardware-specific/tuya-t5/t5ai-peripheral-mapping>
 - esp-claw 主页: <https://esp-claw.com/zh-cn/>
 - esp-claw lua_modules 参考(本移植的设计原型): <https://esp-claw.com/zh-cn/reference-cap/lua-modules/>

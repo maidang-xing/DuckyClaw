@@ -1,6 +1,6 @@
 /**
  * @file ws_server.h
- * @brief WebSocket server for TuyaOpenClaw gateway
+ * @brief WebSocket server for TClaw gateway
  *
  * Provides a lightweight WebSocket server that accepts external client
  * connections. Text messages received from clients are forwarded to the

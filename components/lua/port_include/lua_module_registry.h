@@ -1,6 +1,6 @@
 /**
  * @file lua_module_registry.h
- * @brief Lightweight Lua C module registry for TuyaOpenClaw.
+ * @brief Lightweight Lua C module registry for TClaw.
  *
  * Hardware / board-specific Lua modules (gpio, i2c, uart, etc.) register
  * themselves here during init.  When a sandboxed Lua script runs,
