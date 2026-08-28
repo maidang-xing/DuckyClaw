@@ -56,7 +56,7 @@ TClaw 是基于 TuyaOpen C SDK 构建的硬件导向 AI Agent。它在边缘设�
 
 **Ducky 是 TuyaOpen 的硬件吉祥物** —— 一只能在任何环境中如鱼得水的鸭子，从最小的 MCU 到完整的桌面 Linux 系统。TClaw 继承了这种精神：一套代码，适配所有板子，零妥协。
 
-项目名称本身就是完整的故事。**TuyaOpen** 是底座 —— 将芯片级硬件、IoT 云和 AI 统一于单一 Key 的商业级 C SDK。**Claw** 是 Agent 范式 —— 从 OpenClaw 借鉴的推理–工具调用–行动循环，经过改造以适应物理世界。Ducky 在中间，构成一个越用越聪明的全天候硬件伴侣。
+项目名称本身就是完整的故事。**T** 代表 TuyaOpen —— 底座，将芯片级硬件、IoT 云和 AI 统一于单一 Key 的商业级 C SDK。**Claw** 是 Agent 范式 —— 从 OpenClaw 借鉴的推理–工具调用–行动循环，经过改造以适应物理世界。再加上 Ducky，构成一个越用越聪明的全天候硬件伴侣。
 
 **为什么是鸭子和爪子？** 鸭子无处不在、适应力强，几乎在任何环境中都能生存——正如 TClaw 的软件，可以从微控制器部署到桌面 Linux。"爪子"象征精准、灵巧，以及对真实世界设备和数字 Agent 的直接掌控。借助 TuyaOpen，硬件集成更加灵活，让你轻松将各种硬件能力直接接入 Agent。
 
@@ -252,7 +252,7 @@ TClaw/
 │   └── skill_loader.c/h      # 扫描 skills/，为系统提示构建摘要
 ├── src/                      # 应用入口与业务逻辑
 │   ├── tuya_app_main.c       # TuyaOpen 应用入口，初始化，事件循环
-│   ├── tclaw_chat.c  # AI 流式事件桥接（轮次结束时通知 Agent 循环）
+│   ├── tclaw_chat.c          # AI 流式事件桥接（轮次结束时通知 Agent 循环）
 │   ├── app_im.c              # IM–Agent 桥接
 │   └── app_cli_cmd.c         # CLI 和运行时配置命令
 ├── tools/                    # MCP 风格设备工具

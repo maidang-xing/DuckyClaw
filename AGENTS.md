@@ -141,7 +141,7 @@ TClaw/   (git repo: tuya/TClaw, a.k.a. Ducky)
 │
 ├── src/                    # Application glue layer
 │   ├── tuya_app_main.c     #   Entry point user_main(), initialization orchestration
-│   ├── tclaw_chat.c   #   AI stream event handling, semaphore bridge to agent_loop
+│   ├── tclaw_chat.c        #   AI stream event handling, semaphore bridge to agent_loop
 │   ├── app_im.c            #   IM init, outbound dispatch, channel switching
 │   ├── cli_cmd.c           #   Extended CLI commands
 │   └── reset_netcfg.c      #   Network config reset logic
@@ -150,7 +150,7 @@ TClaw/   (git repo: tuya/TClaw, a.k.a. Ducky)
 │   ├── tuya_app_config.h   #   Product ID, channel tokens, gateway config defaults
 │   ├── tuya_app_config_secrets.h(.example) # Sensitive credentials (gitignored)
 │   ├── app_im.h            #   IM application interface
-│   └── tclaw_chat.h   #   Chat module interface
+│   └── tclaw_chat.h        #   Chat module interface
 │
 ├── ai_components/          # TuyaOpen AI component adapters (sub-CMake)
 ├── config/                 # Board-level Kconfig snapshots
@@ -176,7 +176,7 @@ user_main()
   ├── tuya_iot_init()             // Tuya IoT client
   ├── netmgr_init()               // Network manager
   ├── board_register_hardware()
-  ├── tclaw_chat_init()      // Register AI stream event callback
+  ├── tclaw_chat_init()           // Register AI stream event callback
   ├── app_im_init()               // Subscribe to MQTT connected event (deferred IM init)
   ├── ws_server_start()           // Start WebSocket server
   ├── tool_registry_init()        // Subscribe to MQTT connected → one-shot MCP tool chain init

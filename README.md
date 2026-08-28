@@ -56,7 +56,7 @@ It's lightweight and effortlessly deployable to almost any edge hardware — fro
 
 **Ducky is TuyaOpen's hardware mascot** — a duck that thrives in any environment, from the tiniest MCU to a full desktop Linux box. TClaw inherits that spirit: one codebase, every board, zero compromise.
 
-The name tells the whole story. **TuyaOpen** is the foundation — the commercial-grade C SDK that bridges chip-level hardware, IoT cloud, and AI in a single unified key. **Claw** is the agent paradigm — the loop of reasoning, tool use, and action borrowed from OpenClaw, adapted for the physical world. Put Ducky in the middle and you get an always-on hardware companion that gets smarter the more you use it.
+The name tells the whole story. **T** stands for TuyaOpen — the foundation, the commercial-grade C SDK that bridges chip-level hardware, IoT cloud, and AI in a single unified key. **Claw** is the agent paradigm — the loop of reasoning, tool use, and action borrowed from OpenClaw, adapted for the physical world. Add Ducky, and you get an always-on hardware companion that gets smarter the more you use it.
 
 **Why a duck and a claw?** Ducks are omnipresent, adaptable, and thrive in almost any environment — just like TClaw's software, which you can deploy from microcontrollers to desktop Linux. The "claw" symbolizes precision, dexterity, and direct command over both your real-world devices and digital agents. With TuyaOpen, hardware integration is much more flexible, allowing you to easily connect a wide range of hardware features and capabilities directly into your agent.
 
@@ -252,7 +252,7 @@ TClaw/
 │   └── skill_loader.c/h      # Scans skills/, builds summary for system prompt
 ├── src/                      # App entry and business logic
 │   ├── tuya_app_main.c       # TuyaOpen app entry, init, event loop
-│   ├── tclaw_chat.c  # AI stream event bridge (notifies agent loop on turn end)
+│   ├── tclaw_chat.c          # AI stream event bridge (notifies agent loop on turn end)
 │   ├── app_im.c              # IM–Agent bridge
 │   └── app_cli_cmd.c         # CLI and runtime config commands
 ├── tools/                    # MCP-style device tools

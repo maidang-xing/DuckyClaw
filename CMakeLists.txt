@@ -134,7 +134,7 @@ endfunction()
 # include paths from the COMPONENT_PUBINC variable that was snapshotted in
 # the lib's own CMakeLists BEFORE our overlay ran, so EXAMPLE_LIB also needs
 # the overlay path explicitly — otherwise app sources that compile into
-# EXAMPLE_LIB (agent_loop.c, ducky_claw_chat.c, app_im.c, …) keep seeing the
+# EXAMPLE_LIB (agent_loop.c, tclaw_chat.c, app_im.c, …) keep seeing the
 # upstream headers without TClaw's added declarations.
 foreach(_lib_hdir ai_mcp ai_agent)
     if(TARGET ${_lib_hdir})

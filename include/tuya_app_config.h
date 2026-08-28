@@ -85,7 +85,7 @@ extern "C" {
 #endif
 
 #ifndef TCLAW_DEVICE_ID
-#define TCLAW_DEVICE_ID       "tclaw-001" /* Unique per device, e.g. MAC address */
+#define TCLAW_DEVICE_ID          "tclaw-001" /* Unique per device, e.g. MAC address */
 #endif
 
 #ifdef __cplusplus
