@@ -72,7 +72,7 @@
 #define BUILTIN_SKILL_CREATOR                                                \
     "# Skill Creator\n"                                                      \
     "\n"                                                                     \
-    "Create new skills for TClaw.\n"                                  \
+    "Create new skills for TClaw.\n"                                         \
     "\n"                                                                     \
     "## When to use\n"                                                       \
     "When the user asks to create a new skill, teach the bot "               \
