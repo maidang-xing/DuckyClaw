@@ -1,6 +1,6 @@
 /**
  * @file tool_hw.h
- * @brief MCP hardware peripheral tools for TuyaOpenClaw
+ * @brief MCP hardware peripheral tools for TClaw
  * @version 0.1
  * @date 2026-03-31
  *

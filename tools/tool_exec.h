@@ -1,6 +1,6 @@
 /**
  * @file tool_exec.h
- * @brief MCP exec/system tools for TuyaOpenClaw
+ * @brief MCP exec/system tools for TClaw
  * @version 0.1
  * @date 2025-03-25
  *

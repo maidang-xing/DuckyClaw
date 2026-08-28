@@ -1,9 +1,9 @@
-# TuyaOpenClaw
+# TClaw
 
 > **Ducky** —— TuyaOpen 的硬件吉祥物 —— 在每一块板子上运行 Claw。
 > *（前身为 DuckyClaw。）*
 
-TuyaOpenClaw 是基于 TuyaOpen C SDK 构建的硬件导向 AI Agent。它在边缘设备（Tuya T5AI、ESP32、Raspberry Pi、Linux）上运行 Claw 风格的 Agent 循环，通过 IM 通道（Telegram、Discord、飞书、微信、QQ 机器人）与用户通信，并直接在设备端执行 MCP 风格的工具调用。
+TClaw 是基于 TuyaOpen C SDK 构建的硬件导向 AI Agent。它在边缘设备（Tuya T5AI、ESP32、Raspberry Pi、Linux）上运行 Claw 风格的 Agent 循环，通过 IM 通道（Telegram、Discord、飞书、微信、QQ 机器人）与用户通信，并直接在设备端执行 MCP 风格的工具调用。
 
 ## 支持的硬件
 
@@ -25,18 +25,18 @@ TuyaOpenClaw 是基于 TuyaOpen C SDK 构建的硬件导向 AI Agent。它在边
 > **🚧 积极开发中** —— 项目处于高强度开发阶段，随时可能出现问题。现在运行可能影响最终体验。遇到任何问题请提 Issue。
 
 
-## ❓ 为什么选择 TuyaOpenClaw？
+## ❓ 为什么选择 TClaw？
 
-大多数 AI Agent 框架虽然强大，但却繁琐。它们往往需要昂贵的订阅费、复杂的配置，并叠加在各种框架和 API 之上。TuyaOpenClaw 提供了一条不同的路。
+大多数 AI Agent 框架虽然强大，但却繁琐。它们往往需要昂贵的订阅费、复杂的配置，并叠加在各种框架和 API 之上。TClaw 提供了一条不同的路。
 
-基于商业级设备–云端 AI Agent 底座，TuyaOpenClaw 将设备端 Agent 与云端能力无缝融合。
+基于商业级设备–云端 AI Agent 底座，TClaw 将设备端 Agent 与云端能力无缝融合。
 
 只需一个 TuyaOpen Key，即可畅享涂鸦云平台及其新一代设备–云端 AI Agent。
 
 轻量、易部署，适配几乎所有边缘硬件——从 WiFi MCU 到 ARM SoC，再到 Ubuntu PC。
 
 
-| | TuyaOpenClaw | OpenClaw / MimiClaw / 其他 |
+| | TClaw | OpenClaw / MimiClaw / 其他 |
 |---|---|---|
 | **架构** | 基于 TuyaOpen C SDK 的硬件导向 Claw Agent；设备–云端融合 | OpenClaw：Node.js 全天候桌面/服务器 Agent。MimiClaw：ESP32-S3 裸机 C。其他：框架栈（Pi、Claude Code 等）|
 | **部署目标** | MCU（T5AI、ESP32-S3）、SoC（RPi 4/5、ARM Linux）、PC（Ubuntu x64）；单一代码库 | OpenClaw：Mac mini、Pi、VPS。MimiClaw：5 美元 ESP32-S3。其他：仅服务器/桌面 |
@@ -54,16 +54,16 @@ TuyaOpenClaw 是基于 TuyaOpen C SDK 构建的硬件导向 AI Agent。它在边
 
 ## 💡 设计理念
 
-**Ducky 是 TuyaOpen 的硬件吉祥物** —— 一只能在任何环境中如鱼得水的鸭子，从最小的 MCU 到完整的桌面 Linux 系统。TuyaOpenClaw 继承了这种精神：一套代码，适配所有板子，零妥协。
+**Ducky 是 TuyaOpen 的硬件吉祥物** —— 一只能在任何环境中如鱼得水的鸭子，从最小的 MCU 到完整的桌面 Linux 系统。TClaw 继承了这种精神：一套代码，适配所有板子，零妥协。
 
 项目名称本身就是完整的故事。**TuyaOpen** 是底座 —— 将芯片级硬件、IoT 云和 AI 统一于单一 Key 的商业级 C SDK。**Claw** 是 Agent 范式 —— 从 OpenClaw 借鉴的推理–工具调用–行动循环，经过改造以适应物理世界。Ducky 在中间，构成一个越用越聪明的全天候硬件伴侣。
 
-**为什么是鸭子和爪子？** 鸭子无处不在、适应力强，几乎在任何环境中都能生存——正如 TuyaOpenClaw 的软件，可以从微控制器部署到桌面 Linux。"爪子"象征精准、灵巧，以及对真实世界设备和数字 Agent 的直接掌控。借助 TuyaOpen，硬件集成更加灵活，让你轻松将各种硬件能力直接接入 Agent。
+**为什么是鸭子和爪子？** 鸭子无处不在、适应力强，几乎在任何环境中都能生存——正如 TClaw 的软件，可以从微控制器部署到桌面 Linux。"爪子"象征精准、灵巧，以及对真实世界设备和数字 Agent 的直接掌控。借助 TuyaOpen，硬件集成更加灵活，让你轻松将各种硬件能力直接接入 Agent。
 
 
 ### 核心理念
 
-- **个人优先，非企业导向。** TuyaOpenClaw 为个人和创客而生。你的工作流和日常生活优先，没有官僚主义和企业冗余。
+- **个人优先，非企业导向。** TClaw 为个人和创客而生。你的工作流和日常生活优先，没有官僚主义和企业冗余。
 - **精简核心，插件扩展。** 必要 C 核心之外的一切——通道、提供商、工具——都是可替换和扩展的插件。
 - **自调优与自适应。** 通过真实情节记忆和定期自我回顾持续学习，记忆衰减机制帮助它保持时效性。
 - **对话式配置。** 无需厚重的配置文件：直接通过聊天完成 Agent 的设置和修改，硬件端和云端均适用。
@@ -119,7 +119,7 @@ TuyaOpenClaw 是基于 TuyaOpen C SDK 构建的硬件导向 AI Agent。它在边
 
 ![Architecture](https://images.tuyacn.com/fe-static/docs/img/62c1ad75-9f01-4911-9d30-c7bac463faec.png)
 
-TuyaOpenClaw 架构将本地设备 Agent 和云端 Agent 统一在同一个系统下。其核心使用 TuyaOpen AI-Agent 框架处理消息、自动化和控制。本地硬件（Raspberry Pi、ESP32、T5AI 或 Linux）运行 Claw 风格的 Agent 循环，通过 IM 通道与用户通信，并直接在设备端执行 MCP 工具。
+TClaw 架构将本地设备 Agent 和云端 Agent 统一在同一个系统下。其核心使用 TuyaOpen AI-Agent 框架处理消息、自动化和控制。本地硬件（Raspberry Pi、ESP32、T5AI 或 Linux）运行 Claw 风格的 Agent 循环，通过 IM 通道与用户通信，并直接在设备端执行 MCP 工具。
 
 **Agent 循环流程：**
 1. 外循环阻塞在 `message_bus_pop_inbound()` —— 等待任意 IM 消息
@@ -133,8 +133,8 @@ TuyaOpenClaw 架构将本地设备 Agent 和云端 Agent 统一在同一个系�
 ### 克隆仓库
 
 ```shell
-git clone https://github.com/tuya/TuyaOpenClaw.git
-cd TuyaOpenClaw
+git clone https://github.com/tuya/TClaw.git
+cd TClaw
 git submodule update --init
 ```
 
@@ -177,9 +177,9 @@ tos.py build
 编译产物输出至 `dist/` 目录。
 
 ### 开发指南
-- Tuya T5AI：[TuyaOpenClaw 快速开始（T5-AI）](https://tuyaopen.ai/zh/docs/duckyclaw/ducky-quick-start-T5AI)
-- Raspberry Pi：[TuyaOpenClaw 快速开始（Raspberry Pi 5）](https://tuyaopen.ai/zh/docs/duckyclaw/ducky-quick-start-raspberry-pi-5)
-- ESP32-S3：[TuyaOpenClaw 快速开始（ESP32-S3）](https://tuyaopen.ai/zh/docs/duckyclaw/ducky-quick-start-ESP32S3)
+- Tuya T5AI：[TClaw 快速开始（T5-AI）](https://tuyaopen.ai/zh/docs/tclaw/ducky-quick-start-T5AI)
+- Raspberry Pi：[TClaw 快速开始（Raspberry Pi 5）](https://tuyaopen.ai/zh/docs/tclaw/ducky-quick-start-raspberry-pi-5)
+- ESP32-S3：[TClaw 快速开始（ESP32-S3）](https://tuyaopen.ai/zh/docs/tclaw/ducky-quick-start-ESP32S3)
 
 
 ## 🔌 技能（Skills）开发
@@ -209,14 +209,14 @@ tos.py build
 ## 📁 项目结构
 
 ```
-TuyaOpenClaw/
+TClaw/
 ├── agent/                    # Agent 核心逻辑
 │   ├── agent_loop.c/h        # Claw 风格外循环+内循环（工具调用、上下文、信号量同步）
 │   └── context_builder.c/h   # 每轮组装系统提示
 ├── components/
 │   └── lua/                  # 嵌入式 Lua 5.5 沙箱运行时
 │       ├── lua/              # Lua 5.5 核心源码（vendored）
-│       ├── port/             # TuyaOpenClaw 胶合层：沙箱初始化、运行时、模块注册
+│       ├── port/             # TClaw 胶合层：沙箱初始化、运行时、模块注册
 │       └── modules/          # 硬件 Lua 模块（gpio、delay）
 ├── config/                   # 板型 / 平台 Kconfig 配置
 │   ├── TUYA_T5AI_BOARD_LCD_3.5_CAMERA.config      # Tuya T5AI 3.5" LCD + 摄像头
@@ -252,7 +252,7 @@ TuyaOpenClaw/
 │   └── skill_loader.c/h      # 扫描 skills/，为系统提示构建摘要
 ├── src/                      # 应用入口与业务逻辑
 │   ├── tuya_app_main.c       # TuyaOpen 应用入口，初始化，事件循环
-│   ├── tuyaopen_claw_chat.c  # AI 流式事件桥接（轮次结束时通知 Agent 循环）
+│   ├── tclaw_chat.c  # AI 流式事件桥接（轮次结束时通知 Agent 循环）
 │   ├── app_im.c              # IM–Agent 桥接
 │   └── app_cli_cmd.c         # CLI 和运行时配置命令
 ├── tools/                    # MCP 风格设备工具
@@ -271,7 +271,7 @@ TuyaOpenClaw/
 
 ## 🐛 问题反馈
 
-请通过[新建 Issue](https://github.com/tuya/TuyaOpenClaw/issues) 反馈问题，提交前请确认该问题尚未被报告。欢迎任何改进贡献，感谢！🙏✨
+请通过[新建 Issue](https://github.com/tuya/TClaw/issues) 反馈问题，提交前请确认该问题尚未被报告。欢迎任何改进贡献，感谢！🙏✨
 
 ## 🙏🙏🙏 关注我们
 
@@ -294,8 +294,8 @@ TuyaOpenClaw/
 
 ## 📝 作者
 
-本项目由 [TuyaOpen 团队](https://tuyaopen.ai/) 创建，感谢所有[贡献者](https://github.com/tuya/TuyaOpenClaw/graphs/contributors)的帮助。
+本项目由 [TuyaOpen 团队](https://tuyaopen.ai/) 创建，感谢所有[贡献者](https://github.com/tuya/TClaw/graphs/contributors)的帮助。
 
-[![contributors](https://contrib.rocks/image?repo=tuya/TuyaOpenClaw)](https://github.com/tuya/TuyaOpenClaw/graphs/contributors)
+[![contributors](https://contrib.rocks/image?repo=tuya/TuyaOpenClaw)](https://github.com/tuya/TClaw/graphs/contributors)
 
 ---

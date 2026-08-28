@@ -1,6 +1,6 @@
 ##
 # @file CMakeLists.txt
-# @brief Embedded Lua 5.5 component for TuyaOpenClaw
+# @brief Embedded Lua 5.5 component for TClaw
 #
 # Vendored from upstream Lua 5.5 (originally via the esp-idf-component-lua
 # managed component). Sources liolib.c / loslib.c / loadlib.c / linit.c /
@@ -48,7 +48,7 @@ set(LUA_CORE_SRCS
 )
 
 # ----------------------------------------------------------------------------
-# TuyaOpenClaw port glue
+# TClaw port glue
 # ----------------------------------------------------------------------------
 set(LUA_PORT_SRCS
     ${MODULE_PATH}/port/linit_sandbox.c

@@ -1,6 +1,6 @@
 /**
  * @file cron_service.h
- * @brief Cron (scheduled task) service for TuyaOpenClaw
+ * @brief Cron (scheduled task) service for TClaw
  * @version 0.1
  * @date 2025-03-25
  *

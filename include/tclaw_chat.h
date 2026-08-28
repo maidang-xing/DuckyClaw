@@ -1,12 +1,12 @@
 /**
- * @file tuyaopen_claw_chat.h
- * @brief tuyaopen_claw_chat module: AI stream event bridge for TuyaOpenClaw
+ * @file tclaw_chat.h
+ * @brief tclaw_chat module: AI stream event bridge for TClaw
  * @version 0.1
  * @date 2025-03-25
  */
 
-#ifndef __TUYAOPEN_CLAW_CHAT_H__
-#define __TUYAOPEN_CLAW_CHAT_H__
+#ifndef __TCLAW_CHAT_H__
+#define __TCLAW_CHAT_H__
 
 #include "tuya_cloud_types.h"
 #include "ai_chat_main.h"
@@ -26,10 +26,10 @@ extern "C" {
 /***********************************************************
 ********************function declaration********************
 ***********************************************************/
-OPERATE_RET tuyaopen_claw_chat_init(void);
+OPERATE_RET tclaw_chat_init(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __TUYAOPEN_CLAW_CHAT_H__ */
+#endif /* __TCLAW_CHAT_H__ */
